@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template, url_for, request
 from werkzeug.exceptions import abort
 from collections import defaultdict
 
@@ -92,6 +92,8 @@ list_map_url=[("pangaea standard", 'Map_Pangaea_29.webp'),
     ("primordial", 'Map_Primodial_29.webp'),
     ("inland sea", 'Map_Inland_Sea_29.webp')]
 
+list_map_name = [x for (x,y) in list_map_url]
+
 CIV_ASSETS_NAMES = defaultdict(lambda :'../static/assets/unknown-18-512.png')
 for k, v in list_civ_url:
     CIV_ASSETS_NAMES[k]='../static/assets/'+v
@@ -122,13 +124,44 @@ app = Flask(__name__)
 def index():
     conn = get_db_connection()
     games = conn.execute('SELECT * FROM games').fetchall()
+    list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
+    list_team = conn.execute('SELECT DISTINCT "Team A" FROM games').fetchall()
+    list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
     conn.close()
-    return render_template('index.html', games=games, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
+    return render_template('index_search_bar.html', games=games, url_civ=CIV_ASSETS_NAMES,
+                           url_map=MAP_ASSETS_NAME,list_map=list_map, list_team=list_team, list_div=list_div)
 
 @app.route('/<int:game_id>', methods=['GET', 'POST'])
 def game(game_id):
     game = get_game(game_id)
     return render_template('games.html', game=game, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    team = request.form.get('team')
+    map = request.form.get('map')
+    div = request.form.get('div')
+    print(map,team,div)
+    conn = get_db_connection()
+    if map == 'None' and div=='None' and team=='None':
+        games = conn.execute('SELECT * FROM games ').fetchall()
+    elif map == 'None' and div=='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?)',(team,team)).fetchall()
+    elif team == 'None' and div=='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Map played" = ? )', (map,)).fetchall()
+    elif team == 'None' and map =='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Division" = ? )', (div,)).fetchall()
+    elif div == 'None':
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? )', (team,team,map,)).fetchall()
+    elif team =='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Map played" = ? ) AND ("Division" = ? )', (map,div,)).fetchall()
+    elif map =='None':
+        games = conn.execute('SELECT * FROM games WHERE  ("Team A" = ? OR "Team B" = ?) AND ("Division" = ? )', (team,team,div,)).fetchall()
+    else :
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? ) AND ("Division" = ? )', (team, team, map, div)).fetchall()
+    conn.close()
+    return render_template('index.html', games=games, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
 
 if __name__ == '__main__':
   app.run()

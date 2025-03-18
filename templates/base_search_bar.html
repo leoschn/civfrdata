@@ -23,6 +23,40 @@
             </li>
         </ul>
     </div>
+    <form class="form-inline" method="POST" action="{{ url_for('search') }}">
+        <div class="form-group">
+            <div class="input-group">
+                <div style="margin:5px">
+                    <select name='team' class="selectpicker form-control" size="3" aria-label="Size 3 select example">
+                        <option selected value="None"> All maps</option>
+                        {% for name in list_team %}
+                        <option value="{{name['Team A']}}"> {{name['Team A']}} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="margin:5px">
+                    <select name='map' class="selectpicker form-control" size="3" aria-label="Size 3 select example">
+                        <option selected value="None"> All Teams</option>
+                        {% for name in list_map %}
+                        <option value="{{name['Map played']}}"> {{name['Map played']}} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="margin:5px">
+                    <select name='div' class="selectpicker form-control" size="3" aria-label="Size 3 select example">
+                        <option selected value="None"> All Divisions</option>
+                        {% for name in list_div %}
+                        <option value="{{name['Division']}}"> {{name['Division']}} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-default">Go</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
 </nav>
 <main class="container">
     {% block content %} {% endblock %}
