@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="background-color: rgba(0, 0, 0, 0.5)">
+    <div class="container-fluid" >
+        <div class="row justify-content-between">
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-start">
+                    <div class="col-sm-3" >
+                        <img class="img-fluid" alt="{{ game['Map ban1'] }}" src="{{ url_map[game['Map ban1']] }}" />
+
+                    </div>
+                    <div class="col-sm-3">
+                        <img class="img-fluid" alt="{{ game['Map ban2'] }}" src="{{  url_map[game['Map ban2']] }}" />
+                    </div>
+                    <div class="col-sm-3" >
+                        <img class="img-fluid" alt="{{ game['Map ban3'] }}" src="{{  url_map[game['Map ban3']] }}" />
+                    </div>
+                       </div>
+                </div>
+            </div>
+
+            <div class="col-2" >
+                <div class="row justify-content-end">
+                    <div class="col-10" >
+                        <img class="img-fluid" alt="{{ game['Map played'] }}" src="{{  url_map[game['Map played']] }}" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-end">
+                    <div class="col-sm-3" >
+                        <img class="img-fluid" alt="{{ game['Map ban4'] }}" src="{{  url_map[game['Map ban4']] }}" />
+                    </div>
+                    <div class="col-sm-3" >
+                        <img class="img-fluid" alt="{{ game['Map ban5'] }}" src="{{  url_map[game['Map ban5']] }}" />
+                    </div>
+                    <div class="col-sm-3" >
+                        <img class="img-fluid" alt="{{ game['Map ban5'] }}" src="{{  url_map[game['Map ban6']] }}" />
+                    </div>
+                </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container text-center">
+        <div class="row justify-content-between">
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-start">
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban1'] }}" src="{{ url_civ[game['Ban1']] }}" />
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban3'] }}" src="{{  url_civ[game['Ban3']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban5'] }}" src="{{  url_civ[game['Ban5']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban7'] }}" src="{{  url_civ[game['Ban7']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban9'] }}" src="{{  url_civ[game['Ban9']] }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="text-box">
+                Ban phase 1
+            </div>
+            </div>
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-end">
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban2'] }}" src="{{ url_civ[game['Ban2']] }}" />
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban4'] }}" src="{{  url_civ[game['Ban4']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban6'] }}" src="{{  url_civ[game['Ban6']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban8'] }}" src="{{  url_civ[game['Ban8']] }}" />
+                        </div>
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban10'] }}" src="{{  url_civ[game['Ban10']] }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-between">
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-between">
+                        <div class="col-sm-4" >
+                            <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{ url_civ[game['PickA1']] }}" />
+                            <span class="text-player"> {{ game['PlayerA1'] }} </span>
+                        </div>
+                        <div class="col-sm-4">
+                            <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{  url_civ[game['PickA2']] }}" />
+                            <span class="text-player"> {{ game['PlayerA2'] }} </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="text-box">
+                Pick phase 1
+            </div>
+            </div>
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-between">
+                        <div class="col-sm-4" >
+                            <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{ url_civ[game['PickB1']] }}" />
+                            <span class="text-player"> {{ game['PlayerB1'] }} </span>
+                        </div>
+                        <div class="col-sm-4">
+                            <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{  url_civ[game['PickB2']] }}" />
+                            <span class="text-player"> {{ game['PlayerB2'] }} </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-between">
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-start">
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban11'] }}" src="{{ url_civ[game['Ban11']] }}" />
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban13'] }}" src="{{  url_civ[game['Ban13']] }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="text-box">
+                Ban phase 2
+            </div>
+            </div>
+            <div class="col-5">
+                <div class="container-fluid">
+                    <div class="row justify-content-end">
+                        <div class="col-sm-2" >
+                            <img class="img-fluid" alt="{{ game['Ban12'] }}" src="{{ url_civ[game['Ban12']] }}" />
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban14'] }}" src="{{  url_civ[game['Ban14']] }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-between">
+        <div class="col-5">
+            <div class="container-fluid">
+                <div class="row justify-content-between">
+                    <div class="col-sm-4" >
+                        <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{ url_civ[game['PickA3']] }}" />
+                        <span class="text-player"> {{ game['PlayerA3'] }} </span>
+                    </div>
+                    <div class="col-sm-4">
+                        <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{  url_civ[game['PickA4']] }}" />
+                        <span class="text-player"> {{ game['PlayerA4'] }} </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="text-box">
+                Pick phase 2
+            </div>
+        </div>
+        <div class="col-5">
+            <div class="container-fluid">
+                <div class="row justify-content-between">
+                    <div class="col-sm-4" >
+                        <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{ url_civ[game['PickB3']] }}" />
+                        <span class="text-player"> {{ game['PlayerB3'] }}  </span>
+                    </div>
+                    <div class="col-sm-4">
+                        <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{  url_civ[game['PickB4']] }}" />
+                        <span class="text-player"> {{ game['PlayerB4'] }} </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
