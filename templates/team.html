@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Team Details - {{ team.team }} (D{{ team.division }}){% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1 class="text-center mb-4">Équipe : {{ team.team }} (D{{ team.division }})</h1>
+  
+  <div class="row mb-4">
+    <!-- Winrate Chart -->
+    <div class="col-md-4">
+      <h2>Winrate</h2>
+      <canvas id="winrateChart" width="200" height="200"></canvas>
+      <p class="text-center mt-2">{{ (team.winrate * 100) | round(2) }}% de victoires</p>
+    </div>
+    
+<div class="col-md-8">
+  <h2>Historique des matchs</h2>
+  <div id="matchContainer" style="max-height: 400px; overflow-y: auto;">
+    {% if team.matches %}
+      <ul class="list-group">
+        {% for match in team.matches|reverse %}
+          {% if match.result == 'win' %}
+            <li class="list-group-item" style="background-color: #d4edda;">
+              <a href="{{ url_for('team_details', team_name=team.team) }}" style="text-decoration: none; color: green;">
+                {{ team.team }}
+              </a>
+              vs.
+              <a href="{{ url_for('team_details', team_name=match.opponent) }}" style="text-decoration: none; color: red;">
+                {{ match.opponent }}
+              </a>
+              - game du :
+              <a href="{{ url_for('game', game_id=match['id']) }}" style="text-decoration: none; color: inherit;">
+                {{ match.date }}
+              </a>
+            </li>
+          {% else %}
+            <li class="list-group-item" style="background-color: #f8d7da;">
+              <a href="{{ url_for('team_details', team_name=team.team) }}" style="text-decoration: none; color: red;">
+                {{ team.team }}
+              </a>
+              vs.
+              <a href="{{ url_for('team_details', team_name=match.opponent) }}" style="text-decoration: none; color: green;">
+                {{ match.opponent }}
+              </a>
+              - game du :
+              <a href="{{ url_for('game', game_id=match['id']) }}" style="text-decoration: none; color: inherit;">
+                {{ match.date }}
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Aucun match enregistré.</p>
+    {% endif %}
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+  </div>
+  
+  <!-- Players Section -->
+  <h2>Joueurs de l'équipe</h2>
+  {% if team.players %}
+  <div class="row">
+    {% for player in team.players %}
+    <div class="col-md-3 mb-4">
+      <div class="card shadow-sm" style="background-color: #FFDAB9; border: 2px solid #FFDAB9;">
+        <div class="card-body text-center">
+          <h5 class="card-title">{{ player['pseudo'] }}</h5>
+          <a href="{{ url_for('player_details', player_name=player['pseudo']) }}" class="btn btn-outline-dark btn-sm">Voir détails</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p>Aucun joueur trouvé pour cette équipe.</p>
+  {% endif %}
+  
+  <!-- Maps Played Section -->
+  <h2>Maps Jouées</h2>
+  {% if team.maps %}
+  <div class="row">
+    {% for map, count in team.maps.items() %}
+    <div class="col-sm-3 col-md-2 mb-3">
+      <div class="card h-100 text-center" style="background-color: #FFDAB9;">
+        <img class="card-img-top" src="{{ url_map[map] }}" alt="{{ map }}" title="{{ map }}" style="height: 80px; object-fit: contain;">
+        <div class="card-body p-2">
+          <h6 class="card-title mb-1">{{ map }}</h6>
+          <p class="card-text small">{{ count }} fois</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p>Aucune donnée de map.</p>
+  {% endif %}
+</div>
+
+<!-- Chart.js pour le graphique winrate -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  var ctx = document.getElementById('winrateChart').getContext('2d');
+  var winrateChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+          labels: ['Victoires', 'Défaites'],
+          datasets: [{
+              data: [{{ team.wins }}, {{ team.total_games - team.wins }}],
+              backgroundColor: ['green', 'red']
+          }]
+      },
+      options: {
+          responsive: false,
+          plugins: {
+              legend: {
+                  display: false
+              },
+              tooltip: {
+                  callbacks: {
+                      label: function(context) {
+                          var label = context.label || '';
+                          var value = context.parsed;
+                          return label + ': ' + value;
+                      }
+                  }
+              }
+          }
+      }
+  });
+</script>
+{% endblock %}

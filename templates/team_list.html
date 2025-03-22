@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Teams{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1 class="mb-4 text-center">Liste des équipes</h1>
+  <div class="row">
+    {% for team in teams %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm" style="border: 2px solid #FFDAB9; background-color: #FFF8F0;">
+        <div class="card-header" style="background-color: #FFDAB9;">
+<h5 class="card-title mb-0 text-center">
+  {{ team['team_name'] }} (D{{ team['division'] }})
+</h5>
+
+        </div>
+        <div class="card-body text-center">
+          <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-outline-dark">
+            Voir les détails
+          </a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+      <div class="alert alert-warning text-center" role="alert">
+        Aucune équipe 
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
