@@ -15,16 +15,9 @@
     <!-- Bouton Accueil ajouté à gauche -->
     <a class="navbar-brand" href="{{ url_for('landingpage') }}">Accueil</a>
     <a class="navbar-brand" href="{{ url_for('index') }}">CivFr Squadron Data</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('player_list') }}">Players</a>
-				<a class="nav-link" href="{{ url_for('team_list') }}">Teams</a>
-            </li>
-        </ul>
+    <a class="navbar-brand" href="{{ url_for('player_list') }}">Players</a>
+    <a class="navbar-brand" href="{{ url_for('team_list') }}">Teams</a>
+
 
     <form class="form-inline" method="POST" action="{{ url_for('search') }}">
         <div class="form-group">

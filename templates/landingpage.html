@@ -20,7 +20,7 @@
             <h3 class="text-center">Division {{ division }}</h3>
             <ul class="list-group">
               {% for team in divisions[division] %}
-                <li class="list-group-item">
+                <li class="list-group-item"  style="background-color: #FFDAB9;">
                   <a href="{{ url_for('team_details', team_name=team['team_name']) }}" style="text-decoration: none;">
                     {{ team['team_name'] }}
                   </a>

@@ -122,14 +122,14 @@ app = Flask(__name__)
 def get_all_players():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
-    players = conn.execute('SELECT pseudo FROM players ORDER BY pseudo ASC').fetchall()
+    players = conn.execute('SELECT pseudo FROM players ORDER BY LOWER(pseudo) ASC').fetchall()
     conn.close()
     return players
 
 def get_all_teams():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
-    teams = conn.execute('SELECT team_name, division FROM teams ORDER BY team_name ASC').fetchall()
+    teams = conn.execute('SELECT team_name, division FROM teams ORDER BY LOWER(team_name) ASC').fetchall()
     conn.close()
     return teams
 
