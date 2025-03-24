@@ -380,8 +380,6 @@ def landingpage():
         for rank, team in enumerate(sorted_teams, start=1):
             team["ranking"] = rank
 
-
-            print(f"Équipe {team['team_name']} en division {div} a { team["wins"]} victoires. Rang: {rank}")
         divisions[div] = sorted_teams
 
     # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
