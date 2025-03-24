@@ -18,7 +18,7 @@ def run_database_builder():
 def run_bot_script():
     try:
 
-        result = subprocess.run(["python", "bot_script.py"],
+        result = subprocess.run(["python", "bot_scraping.py"],
                                 check=True,
                                 capture_output=True,
                                 text=True)
@@ -31,8 +31,9 @@ def run_bot_script():
         print(e)
 
 
-if __name__ == "__main__":
 
+
+if __name__ == "__main__":
     if(run_bot_script()):
         run_database_builder()
 

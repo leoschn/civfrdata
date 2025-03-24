@@ -309,6 +309,50 @@ def get_team_stats(team_name):
         "loses": loses,
     }
 
+def get_minimal_team_stats(team_name):
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+
+    # Récupérer tous les matchs où l'équipe est impliquée (Team A ou Team B)
+    matches_query = """
+      SELECT *
+      FROM games
+      WHERE "Team A" = ? OR "Team B" = ?
+    """
+    matches_data = conn.execute(matches_query, (team_name, team_name)).fetchall()
+
+    wins = 0
+    loses = 0
+
+    for game in matches_data:
+        div = game["Division"]
+        # Identifier de quel côté se trouve l'équipe et déterminer l'opposant et le résultat.
+        if game["Team A"].strip() == team_name:
+            opponent = game["Team B"].strip() if game["Team B"] else ""
+            result = "win" if game["Winner"] and game["Team A"].strip() == game["Winner"].strip() else "loss"
+        elif game["Team B"].strip() == team_name:
+            opponent = game["Team A"].strip() if game["Team A"] else ""
+            result = "win" if game["Winner"] and game["Team B"].strip() == game["Winner"].strip() else "loss"
+        else:
+            continue  # Ce cas ne devrait pas se produire
+
+        if result == "win":
+            wins += 1
+        if result == "loss":
+            loses += 1
+
+
+    total_games = len(matches_data)
+
+
+    return {
+        "team": team_name,
+        "total_games": total_games,
+        "wins": wins,
+        "loses": loses,
+        "win_rate": wins/total_games,
+    }
+
 
 @app.route('/')
 def landingpage():
@@ -325,10 +369,19 @@ def landingpage():
     # Pour chaque division, trier les équipes par nombre de victoires décroissant et attribuer un rang
     for div, team_list in divisions.items():
     # On s'assure que le nombre de victoires est un entier
+
+        for team in team_list:
+            stats = get_minimal_team_stats(team['team_name'])
+            team["wins"] = stats["wins"]
+            team["loses"] = stats["loses"]
+            team["total_games"] = stats["total_games"]
+
         sorted_teams = sorted(team_list, key=lambda t: int(t.get("wins", 0)), reverse=True)
         for rank, team in enumerate(sorted_teams, start=1):
             team["ranking"] = rank
-            print(f"Équipe {team['team_name']} en division {div} a {team.get('wins', 0)} victoires. Rang: {rank}")
+
+
+            print(f"Équipe {team['team_name']} en division {div} a { team["wins"]} victoires. Rang: {rank}")
         divisions[div] = sorted_teams
 
     # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
@@ -385,7 +438,6 @@ def search():
     team = request.form.get('team')
     map = request.form.get('map')
     div = request.form.get('div')
-    print(map,team,div)
     conn = get_db_connection()
     if map == 'None' and div=='None' and team=='None':
         games = conn.execute('SELECT * FROM games ').fetchall()
