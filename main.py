@@ -3,105 +3,111 @@ from flask import Flask, render_template, url_for, request
 from werkzeug.exceptions import abort
 from collections import defaultdict
 
-list_civ_url = [("abraham lincoln", 'Abraham_Lincoln_29.webp'),
-    ("alexander", 'Alexander_29.webp'),
-    ("amanitore", 'Amanitore_29.webp'),
-    ("ambiorix", 'Ambiorix_29.webp'),
-    ("basil ii", 'Basil_II_29.webp'),
-    ("ba trieu", 'B3Fu_29.webp'),
-    ("catherine de medici (black queen)", 'Catherine_de_Medici_29.webp'),
-    ("chandragupta", 'Chandragupta_29.webp'),
-    ("cleopatra (egyptian)", 'Cleopatra_29.webp'),
-    ("cyrus", 'Cyrus_29.webp'),
-    ("dido", 'Dido_29.webp'),
-    ("eleanor of aquitaine (england)", 'Eleanor_of_Aquitaine_29_29.webp'),
-    ("eleanor of aquitaine (france)", 'Eleanor_of_Aquitaine_29_29_fr.webp'),
-    ("elizabeth i", 'Elizabeth_I_29.webp'),
-    ("frederick barbarossa", 'Frederick_Barbarossa_29.webp'),
-    ("gandhi", 'Gandhi_29.webp'),
-    ("genghis khan", 'Genghis_Khan_29.webp'),
-    ("gilgamesh", 'Gilgamesh_29.webp'),
-    ("gitarja", 'Gitarja_29.webp'),
-    ("gorgo", 'Gorgo_29.webp'),
-    ("hammurabi", 'Hammurabi_29.webp'),
-    ("harald hardrada", 'Harald_Hardrada_29.webp'),
-    ("hojo tokimune", 'Hojo_Tokimune_29.webp'),
-    ("jadwiga", 'Jadwiga_29.webp'),
-    ("jaravarman vii", 'Jayavarman_VII_29.webp'),
-    ("joao iii", 'Jo_29.webp'),
-    ("john curtin", 'John_Curtin_29.webp'),
-    ("julius caesar", 'Julius_Caesar_29.webp'),
-    ("kristina", 'Kristina_29.webp'),
-    ("kublai khan (china)", 'Kublai_Khan_29_29.webp'),
-    ("kublai khan (mongolia)", 'Kublai_Khan_29_29_mong.webp'),
-    ("kupe", 'Kupe_29.webp'),
-    ("lady six sky", 'Lady_Six_Sky_29.webp'),
-    ("lautaro", 'Lautaro_29.webp'),
-    ("ludwig ii", 'Ludwig_II_29.webp'),
-    ("mansa musa", 'Mansa_Musa_29.webp'),
-    ("matthias corvinus", 'Matthias_Corvinus_29.webp'),
-    ("menelik ii", 'Menelik_II_29.webp'),
-    ("montezuma", 'Montezuma_29.webp'),
-    ("mvemba a nzinga", 'Mvemba_a_Nzinga_29.webp'),
-    ("nader shah", 'Nader_Shah_29.webp'),
-    ("nzinga mbande", 'Nzinga_Mbande_29.webp'),
-    ("pachacuti", 'Pachacuti_29.webp'),
-    ("pedro ii", 'Pedro_II_29.webp'),
-    ("pericles", 'Pericles_29.webp'),
-    ("peter", 'Peter_29.webp'),
-    ("philip ii", 'Philip_II_29.webp'),
-    ("poundmaker", 'Poundmaker_29.webp'),
-    ("qin (mandate of heaven)", 'Qin_Shi_Huang_29.webp'),
-    ("qin (unifier)", 'Qin_Shi_Huang_29_29.webp'),
-    ("ramses ii", 'Ramses_II_29.webp'),
-    ("robert the bruce", 'Robert_the_Bruce_29.webp'),
-    ("saladin (sultan)", 'Saladin_29_29.webp'),
-    ("saladin (vizier)", 'Saladin_29.webp'),
-    ("sejong", 'Sejong_29.webp'),
-    ("seondeok", 'Seondeok_29.webp'),
-    ("shaka", 'Shaka_29.webp'),
-    ("simon bolivar", 'Sim3Fvar_29.webp'),
-    ("suleiman (muhtesem)", 'Suleiman_29_29.webp'),
-    ("suleiman (kanuni)", 'Suleiman_29.webp'),
-    ("soundiata keita", 'Sundiata_Keita_29.webp'),
-    ("soundiata", 'Sundiata_Keita_29.webp'),
-    ("tamar", 'Tamar_29.webp'),
-    ("teddy roosevelt (bm)", 'Teddy_Roosevelt_29.webp'),
-    ("teddy roosevelt (rough rider)", 'Teddy_Roosevelt_29_29.webp'),
-    ("teddy rr", 'Teddy_Roosevelt_29_29.webp'),
-    ("theodora", 'Theodora_29.webp'),
-    ("tokugawa", 'Tokugawa_29.webp'),
-    ("tomyris", 'Tomyris_29.webp'),
-    ("trajan", 'Trajan_29.webp'),
-    ("victoria", 'Victoria_29.webp'),
-    ("victoria age of steam", 'Victoria_29_29.webp'),
-    ("wilfred laurier", 'Wilfrid_Laurier_29.webp'),
-    ("wilhelmina", 'Wilhelmina_29.webp'),
-    ("wu zetian", 'Wu_Zetian_29.webp'),
-    ("yongle", 'Yongle_29.webp'),
-    ("harald varangian", 'Harald_Hardrada_29_29.webp'),
-    ("cleopatra (ptolemaic)", 'Cleopatra_29_29.webp'),
-    ("catherine de medici (manificence)", 'Catherine_de_Medici_29_29.webp')]
+# Listes modifiées avec le joli nom (display name)
+list_civ_url = [
+    ("abraham lincoln", 'Abraham_Lincoln_29.webp', "Abraham Lincoln"),
+    ("alexander", 'Alexander_29.webp', "Alexander"),
+    ("amanitore", 'Amanitore_29.webp', "Amanitore"),
+    ("ambiorix", 'Ambiorix_29.webp', "Ambiorix"),
+    ("basil ii", 'Basil_II_29.webp', "Basil II"),
+    ("ba trieu", 'B3Fu_29.webp', "Ba Trieu"),
+    ("catherine de medici (black queen)", 'Catherine_de_Medici_29.webp', "Catherine de Medici (Black Queen)"),
+    ("chandragupta", 'Chandragupta_29.webp', "Chandragupta"),
+    ("cleopatra (egyptian)", 'Cleopatra_29.webp', "Cleopatra (Egyptian)"),
+    ("cyrus", 'Cyrus_29.webp', "Cyrus"),
+    ("dido", 'Dido_29.webp', "Dido"),
+    ("eleanor of aquitaine (england)", 'Eleanor_of_Aquitaine_29_29.webp', "Eleanor of Aquitaine (England)"),
+    ("eleanor of aquitaine (france)", 'Eleanor_of_Aquitaine_29_29_fr.webp', "Eleanor of Aquitaine (France)"),
+    ("elizabeth i", 'Elizabeth_I_29.webp', "Elizabeth I"),
+    ("frederick barbarossa", 'Frederick_Barbarossa_29.webp', "Frederick Barbarossa"),
+    ("gandhi", 'Gandhi_29.webp', "Gandhi"),
+    ("genghis khan", 'Genghis_Khan_29.webp', "Genghis Khan"),
+    ("gilgamesh", 'Gilgamesh_29.webp', "Gilgamesh"),
+    ("gitarja", 'Gitarja_29.webp', "Gitarja"),
+    ("gorgo", 'Gorgo_29.webp', "Gorgo"),
+    ("hammurabi", 'Hammurabi_29.webp', "Hammurabi"),
+    ("harald hardrada", 'Harald_Hardrada_29.webp', "Harald Hardrada"),
+    ("hojo tokimune", 'Hojo_Tokimune_29.webp', "Hojo Tokimune"),
+    ("jadwiga", 'Jadwiga_29.webp', "Jadwiga"),
+    ("jaravarman vii", 'Jayavarman_VII_29.webp', "Jayavarman VII"),
+    ("joao iii", 'Jo_29.webp', "Joao III"),
+    ("john curtin", 'John_Curtin_29.webp', "John Curtin"),
+    ("julius caesar", 'Julius_Caesar_29.webp', "Julius Caesar"),
+    ("kristina", 'Kristina_29.webp', "Kristina"),
+    ("kublai khan (china)", 'Kublai_Khan_29_29.webp', "Kublai Khan (China)"),
+    ("kublai khan (mongolia)", 'Kublai_Khan_29_29_mong.webp', "Kublai Khan (Mongolia)"),
+    ("kupe", 'Kupe_29.webp', "Kupe"),
+    ("lady six sky", 'Lady_Six_Sky_29.webp', "Lady Six Sky"),
+    ("lautaro", 'Lautaro_29.webp', "Lautaro"),
+    ("ludwig ii", 'Ludwig_II_29.webp', "Ludwig II"),
+    ("mansa musa", 'Mansa_Musa_29.webp', "Mansa Musa"),
+    ("matthias corvinus", 'Matthias_Corvinus_29.webp', "Matthias Corvinus"),
+    ("menelik ii", 'Menelik_II_29.webp', "Menelik II"),
+    ("montezuma", 'Montezuma_29.webp', "Montezuma"),
+    ("mvemba a nzinga", 'Mvemba_a_Nzinga_29.webp', "Mvemba a Nzinga"),
+    ("nader shah", 'Nader_Shah_29.webp', "Nader Shah"),
+    ("nzinga mbande", 'Nzinga_Mbande_29.webp', "Nzinga Mbande"),
+    ("pachacuti", 'Pachacuti_29.webp', "Pachacuti"),
+    ("pedro ii", 'Pedro_II_29.webp', "Pedro II"),
+    ("pericles", 'Pericles_29.webp', "Pericles"),
+    ("peter", 'Peter_29.webp', "Peter"),
+    ("philip ii", 'Philip_II_29.webp', "Philip II"),
+    ("poundmaker", 'Poundmaker_29.webp', "Poundmaker"),
+    ("qin (mandate of heaven)", 'Qin_Shi_Huang_29.webp', "Qin (Mandate of Heaven)"),
+    ("qin (unifier)", 'Qin_Shi_Huang_29_29.webp', "Qin (Unifier)"),
+    ("ramses ii", 'Ramses_II_29.webp', "Ramses II"),
+    ("robert the bruce", 'Robert_the_Bruce_29.webp', "Robert the Bruce"),
+    ("saladin (sultan)", 'Saladin_29_29.webp', "Saladin (Sultan)"),
+    ("saladin (vizier)", 'Saladin_29.webp', "Saladin (Vizier)"),
+    ("sejong", 'Sejong_29.webp', "Sejong"),
+    ("seondeok", 'Seondeok_29.webp', "Seondeok"),
+    ("shaka", 'Shaka_29.webp', "Shaka"),
+    ("simon bolivar", 'Sim3Fvar_29.webp', "Simon Bolivar"),
+    ("suleiman (muhtesem)", 'Suleiman_29_29.webp', "Suleiman (Muhtesem)"),
+    ("suleiman (kanuni)", 'Suleiman_29.webp', "Suleiman (Kanuni)"),
+    ("soundiata keita", 'Sundiata_Keita_29.webp', "Sundiata Keita"),
+    ("soundiata", 'Sundiata_Keita_29.webp', "Sundiata"),
+    ("tamar", 'Tamar_29.webp', "Tamar"),
+    ("teddy roosevelt (bm)", 'Teddy_Roosevelt_29.webp', "Teddy Roosevelt (BM)"),
+    ("teddy roosevelt (rough rider)", 'Teddy_Roosevelt_29_29.webp', "Teddy Roosevelt (Rough Rider)"),
+    ("teddy rr", 'Teddy_Roosevelt_29_29.webp', "Teddy Roosevelt (RR)"),
+    ("theodora", 'Theodora_29.webp', "Theodora"),
+    ("tokugawa", 'Tokugawa_29.webp', "Tokugawa"),
+    ("tomyris", 'Tomyris_29.webp', "Tomyris"),
+    ("trajan", 'Trajan_29.webp', "Trajan"),
+    ("victoria", 'Victoria_29.webp', "Victoria"),
+    ("victoria age of steam", 'Victoria_29_29.webp', "Victoria Age of Steam"),
+    ("wilfred laurier", 'Wilfrid_Laurier_29.webp', "Wilfred Laurier"),
+    ("wilhelmina", 'Wilhelmina_29.webp', "Wilhelmina"),
+    ("wu zetian", 'Wu_Zetian_29.webp', "Wu Zetian"),
+    ("yongle", 'Yongle_29.webp', "Yongle"),
+    ("harald varangian", 'Harald_Hardrada_29_29.webp', "Harald Varangian"),
+    ("cleopatra (ptolemaic)", 'Cleopatra_29_29.webp', "Cleopatra (Ptolemaic)"),
+    ("catherine de medici (manificence)", 'Catherine_de_Medici_29_29.webp', "Catherine de Medici (Magnificence)")
+]
 
+list_map_url = [
+    ("pangaea standard", 'Map_Pangaea_29.webp', "Pangaea Standard"),
+    ("seven seas", 'Map_Seven_Seas_29.webp', "Seven Seas"),
+    ("rich highlands", 'Map_Highlands_29.webp', "Rich Highlands"),
+    ("lakes", 'Map_Lakes_29.webp', "Lakes"),
+    ("tilted axis", 'Map_Tilted_Axis_(Civ6).webp', "Tilted Axis"),
+    ("primordial", 'Map_Primodial_29.webp', "Primordial"),
+    ("inland sea", 'Map_Inland_Sea_29.webp', "Inland Sea")
+]
 
-list_map_url=[("pangaea standard", 'Map_Pangaea_29.webp'),
-    ("seven seas", 'Map_Seven_Seas_29.webp'),
-    ("rich highlands", 'Map_Highlands_29.webp'),
-    ("lakes", 'Map_Lakes_29.webp'),
-    ("tilted axis", 'Map_Tilted_Axis_(Civ6).webp'),
-    ("primordial", 'Map_Primodial_29.webp'),
-    ("inland sea", 'Map_Inland_Sea_29.webp')]
+# Dictionnaires pour les assets (chemin vers l'image)
+CIV_ASSETS_NAMES = defaultdict(lambda: '../static/assets/unknown-18-512.png')
+for ident, fichier, _ in list_civ_url:
+    CIV_ASSETS_NAMES[ident] = '../static/assets/' + fichier
 
-list_map_name = [x for (x,y) in list_map_url]
+MAP_ASSETS_NAME = defaultdict(lambda: '../static/assets/unknown-18-512.png')
+for ident, fichier, _ in list_map_url:
+    MAP_ASSETS_NAME[ident] = '../static/assets/' + fichier
 
-CIV_ASSETS_NAMES = defaultdict(lambda :'../static/assets/unknown-18-512.png')
-for k, v in list_civ_url:
-    CIV_ASSETS_NAMES[k]='../static/assets/'+v
-
-MAP_ASSETS_NAME = defaultdict(lambda :'../static/assets/unknown-18-512.png')
-for k, v in list_map_url:
-    MAP_ASSETS_NAME[k]='../static/assets/'+v
-
+# Dictionnaires pour les jolis noms (display names)
+CIV_DISPLAY_NAMES = {ident: display for ident, _, display in list_civ_url}
+MAP_DISPLAY_NAMES = {ident: display for ident, _, display in list_map_url}
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
@@ -420,14 +426,16 @@ def player_details(player_name):
     player = get_player_stats(player_name)
     if player is None:
         abort(404)
-    return render_template('player.html', player=player, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
+    return render_template('player.html', player=player,url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
+                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES)
 
 @app.route('/team/<team_name>')
 def team_details(team_name):
     team = get_team_stats(team_name)
     if team is None:
         abort(404)
-    return render_template('team.html', team=team, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
+    return render_template('team.html', team=team, url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
+                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES)
 
 
 
