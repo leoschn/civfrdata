@@ -1,7 +1,7 @@
 import sqlite3
 
 def add_new_tables_to_db(db_file):
-    # Connexion à la base de données source (qui contient la table "games")
+    # Connexion à la base de données source (contenant la table "games")
     conn = sqlite3.connect(db_file)
     conn.row_factory = sqlite3.Row  # Pour accéder aux colonnes par leur nom
     cursor = conn.cursor()
@@ -12,17 +12,17 @@ def add_new_tables_to_db(db_file):
 
     # Dictionnaire pour stocker les joueurs uniques.
     # Clé : pseudo du joueur.
-    # Valeur : dictionnaire avec :
-    #   - 'team' : nom de l'équipe (Team A pour les PlayerA*, Team B pour les PlayerB*)
-    #   - 'games' : ensemble des IDs des games où il apparaît.
+    # Valeur : dictionnaire contenant :
+    #   - "teams" : dictionnaire avec comme clé le nom de l'équipe et comme valeur le nombre de matchs joués pour cette équipe.
+    #   - "games" : ensemble des IDs des matchs où il apparaît.
     players_dict = {}
 
     # Dictionnaire pour stocker les équipes.
     # Clé : nom de l'équipe.
-    # Valeur : dictionnaire avec :
-    #   - 'players' : ensemble des pseudos appartenant à l'équipe
-    #   - 'games'   : ensemble des game IDs où l'équipe a joué
-    #   - 'division': la division de l'équipe (prise lors de la première occurrence)
+    # Valeur : dictionnaire contenant :
+    #   - "players" : ensemble des pseudos appartenant à l'équipe.
+    #   - "games"   : ensemble des IDs des matchs où l'équipe a joué.
+    #   - "division": la division de l'équipe (prise lors de la première occurrence).
     teams_dict = {}
 
     for row in games_data:
@@ -31,12 +31,11 @@ def add_new_tables_to_db(db_file):
         teamA = row["Team A"].strip() if row["Team A"] else ""
         teamB = row["Team B"].strip() if row["Team B"] else ""
 
-        # Mise à jour des informations pour Team A
+        # Mise à jour des informations pour Team A et Team B dans teams_dict
         if teamA:
             if teamA not in teams_dict:
                 teams_dict[teamA] = {"players": set(), "games": set(), "division": division}
             teams_dict[teamA]["games"].add(str(game_id))
-        # Mise à jour des informations pour Team B
         if teamB:
             if teamB not in teams_dict:
                 teams_dict[teamB] = {"players": set(), "games": set(), "division": division}
@@ -48,18 +47,33 @@ def add_new_tables_to_db(db_file):
             if pseudo and pseudo.strip():
                 pseudo = pseudo.strip()
                 if pseudo not in players_dict:
-                    players_dict[pseudo] = {"team": teamA, "games": set()}
+                    players_dict[pseudo] = {"teams": {}, "games": set()}
                 players_dict[pseudo]["games"].add(str(game_id))
+                if teamA:
+                    # Incrémente le compteur pour teamA
+                    players_dict[pseudo]["teams"][teamA] = players_dict[pseudo]["teams"].get(teamA, 0) + 1
+
         # Pour les joueurs de l'équipe B (PlayerB1 à PlayerB4)
         for col in ["PlayerB1", "PlayerB2", "PlayerB3", "PlayerB4"]:
             pseudo = row[col]
             if pseudo and pseudo.strip():
                 pseudo = pseudo.strip()
                 if pseudo not in players_dict:
-                    players_dict[pseudo] = {"team": teamB, "games": set()}
+                    players_dict[pseudo] = {"teams": {}, "games": set()}
                 players_dict[pseudo]["games"].add(str(game_id))
+                if teamB:
+                    # Incrémente le compteur pour teamB
+                    players_dict[pseudo]["teams"][teamB] = players_dict[pseudo]["teams"].get(teamB, 0) + 1
 
-    # Compléter teams_dict avec les joueurs extraits
+    # Pour chaque joueur, déterminer l'équipe pour laquelle il a joué le plus de matchs
+    for pseudo, info in players_dict.items():
+        if info["teams"]:
+            best_team = max(info["teams"].items(), key=lambda x: x[1])[0]
+            info["team"] = best_team
+        else:
+            info["team"] = ""
+
+    # Compléter teams_dict avec la liste des joueurs extraits
     for pseudo, info in players_dict.items():
         team = info["team"]
         if team:
@@ -83,7 +97,7 @@ def add_new_tables_to_db(db_file):
         )
     ''')
 
-    # Création de la table player_games (liaison joueur - game)
+    # Création de la table player_games (liaison joueur - match)
     cursor.execute('''
         CREATE TABLE player_games (
             player_id INTEGER,
@@ -110,7 +124,7 @@ def add_new_tables_to_db(db_file):
         )
     ''')
 
-    # Création de la table team_games (liaison équipe - game)
+    # Création de la table team_games (liaison équipe - match)
     cursor.execute('''
         CREATE TABLE team_games (
             team_name TEXT,
@@ -119,7 +133,7 @@ def add_new_tables_to_db(db_file):
         )
     ''')
 
-    # Insertion des joueurs dans la table players et mapping pseudo -> player_id
+    # Insertion des joueurs dans la table players et création du mapping pseudo -> player_id
     player_id_map = {}
     for pseudo, info in players_dict.items():
         team = info["team"]
