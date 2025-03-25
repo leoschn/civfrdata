@@ -1,5 +1,35 @@
 {% extends 'base.html' %}
 
+{% block extra_nav %}
+<nav class="navbar navbar-expand-md navbar-dark" style="background: linear-gradient(135deg, #2c3e50, #000000);">
+  <div class="container">
+    <form class="d-flex w-100" method="POST" action="{{ url_for('search') }}">
+      <div class="input-group w-100">
+        <select name="team" class="form-select rounded-pill me-2" aria-label="Select Team">
+          <option selected value="None">All Teams</option>
+          {% for name in list_team %}
+            <option value="{{ name['Team A'] }}">{{ name['Team A'] }}</option>
+          {% endfor %}
+        </select>
+        <select name="map" class="form-select rounded-pill me-2" aria-label="Select Map">
+          <option selected value="None">All Maps</option>
+          {% for name in list_map %}
+            <option value="{{ name['Map played'] }}">{{ name['Map played'] }}</option>
+          {% endfor %}
+        </select>
+        <select name="div" class="form-select rounded-pill me-2" aria-label="Select Division">
+          <option selected value="None">All Divisions</option>
+          {% for name in list_div %}
+            <option value="{{ name['Division'] }}">{{ name['Division'] }}</option>
+          {% endfor %}
+        </select>
+        <!-- Bouton de validation ajouté pour lancer la recherche -->
+        <button type="submit" class="btn btn-light rounded-pill ms-2">Search</button>
+      </div>
+    </form>
+  </div>
+</nav>
+{% endblock %}
 
 {% block content %}
     {% for game in games %}
