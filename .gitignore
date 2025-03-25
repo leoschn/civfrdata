@@ -1,3 +1,4 @@
 .idea
 __pycache/
 __pycache__/main.cpython-312.pyc
+/token.txt
