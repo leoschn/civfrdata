@@ -3,32 +3,83 @@
 {% block title %}Teams{% endblock %}
 
 {% block content %}
+<!-- En-tête avec dégradé sombre -->
 <div class="container my-5">
-  <h1 class="mb-4 text-center">Liste des équipes</h1>
+  <div class="p-4 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #2c3e50, #000000);">
+    <h1 class="display-4 text-white fw-bold text-center">Liste des équipes</h1>
+    <p class="lead text-white text-center">Recherchez et découvrez les statistiques des équipes</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Barre de recherche avec autocomplétion via jQuery UI -->
+  <div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+      <form id="teamSearchForm">
+        <div class="input-group">
+          <input type="text" id="teamQuery" name="query" class="form-control rounded-pill" placeholder="Rechercher une équipe..." autocomplete="off">
+          <button type="submit" class="btn btn-primary rounded-pill ms-3 px-4">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Affichage des équipes -->
   <div class="row">
     {% for team in teams %}
-    <div class="col-md-4 mb-4">
-      <div class="card shadow-sm" style="border: 2px solid #FFDAB9; background-color: #FFF8F0;">
-        <div class="card-header" style="background-color: #FFDAB9;">
-<h5 class="card-title mb-0 text-center">
-  {{ team['team_name'] }} (D{{ team['division'] }})
-</h5>
-
-        </div>
-        <div class="card-body text-center">
-          <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-outline-dark">
-            Voir les détails
-          </a>
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm rounded-4" style="border: 2px solid #Fcfcfc; background-color: #343a40;">
+          <div class="card-header text-center rounded-top-4" style="background-color: #495057;">
+            <h5 class="card-title mb-0 text-white">
+              {{ team['team_name'] }} (D{{ team['division'] }})
+            </h5>
+          </div>
+          <div class="card-body text-center">
+            <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
+              Voir les détails
+            </a>
+          </div>
         </div>
       </div>
-    </div>
     {% else %}
-    <div class="col-12">
-      <div class="alert alert-warning text-center" role="alert">
-        Aucune équipe 
+      <div class="col-12">
+        <div class="alert alert-warning text-center" role="alert">
+          Aucune équipe trouvée.
+        </div>
       </div>
-    </div>
     {% endfor %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- jQuery UI pour l'autocomplétion -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+$(function() {
+  var availableTeams = [
+    {% for team in teams %}
+      "{{ team['team_name'] }}",
+    {% endfor %}
+  ];
+  
+  // Active l'autocomplétion après 1 caractère
+  $("#teamQuery").autocomplete({
+    source: availableTeams,
+    minLength: 1
+  });
+  
+  // Redirection vers la page du détail de l'équipe lors de la soumission du formulaire
+  $("#teamSearchForm").on("submit", function(e) {
+    e.preventDefault();
+    var query = $("#teamQuery").val().trim();
+    if(query) {
+      var url = "{{ url_for('team_details', team_name='__team__') }}".replace('__team__', encodeURIComponent(query));
+      window.location.href = url;
+    }
+  });
+});
+</script>
 {% endblock %}

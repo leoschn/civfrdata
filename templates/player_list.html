@@ -3,29 +3,81 @@
 {% block title %}Players{% endblock %}
 
 {% block content %}
+<!-- En-tête avec dégradé sombre -->
 <div class="container my-5">
-  <h1 class="mb-4 text-center">Liste des joueurs</h1>
+  <div class="p-4 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #2c3e50, #000000);">
+    <h1 class="display-4 text-white fw-bold text-center">Liste des joueurs</h1>
+    <p class="lead text-white text-center">Recherchez et découvrez les statistiques des joueurs</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Barre de recherche avec autocomplétion via jQuery UI -->
+  <div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+      <form id="playerSearchForm">
+        <div class="input-group">
+          <input type="text" id="playerQuery" name="query" class="form-control rounded-pill" placeholder="Rechercher un joueur..." autocomplete="off">
+          <button type="submit" class="btn btn-primary rounded-pill ms-3 px-4">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Affichage des joueurs -->
   <div class="row">
     {% for player in players %}
-    <div class="col-md-4 mb-4">
-      <div class="card shadow-sm" style="border: 2px solid #FFDAB9; background-color: #FFF8F0;">
-        <div class="card-header" style="background-color: #FFDAB9;">
-          <h5 class="card-title mb-0 text-center">{{ player['pseudo'] }}</h5>
-        </div>
-        <div class="card-body text-center">
-          <a href="{{ url_for('player_details', player_name=player['pseudo']) }}" class="btn btn-outline-dark">
-            Voir les détails
-          </a>
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm rounded-4" style="border: 2px solid #fcfcfc; background-color: #343a40;">
+          <div class="card-header text-center rounded-top-4" style="background-color: #495057;">
+            <h5 class="card-title mb-0 text-white">{{ player['pseudo'] }}</h5>
+          </div>
+          <div class="card-body text-center">
+            <a href="{{ url_for('player_details', player_name=player['pseudo']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
+              Voir les détails
+            </a>
+          </div>
         </div>
       </div>
-    </div>
     {% else %}
-    <div class="col-12">
-      <div class="alert alert-warning text-center" role="alert">
-        Aucun joueur trouvé.
+      <div class="col-12">
+        <div class="alert alert-warning text-center" role="alert">
+          Aucun joueur trouvé.
+        </div>
       </div>
-    </div>
     {% endfor %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- jQuery UI pour l'autocomplétion -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+$(function() {
+  var availablePlayers = [
+    {% for player in players %}
+      "{{ player['pseudo'] }}",
+    {% endfor %}
+  ];
+  
+  // Active l'autocomplétion après avoir tapé 1 caractère
+  $("#playerQuery").autocomplete({
+    source: availablePlayers,
+    minLength: 1
+  });
+  
+  // Redirection vers la page du joueur lors de la soumission du formulaire
+  $("#playerSearchForm").on("submit", function(e) {
+    e.preventDefault();
+    var query = $("#playerQuery").val().trim();
+    if(query) {
+      var url = "{{ url_for('player_details', player_name='__player__') }}".replace('__player__', encodeURIComponent(query));
+      window.location.href = url;
+    }
+  });
+});
+</script>
 {% endblock %}

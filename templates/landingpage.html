@@ -4,37 +4,53 @@
 
 {% block content %}
 <div class="container my-5">
-  <div class="jumbotron text-center" style="background-color: #FFDAB9; padding: 3rem; border-radius: 10px;">
-    <h1 class="display-4">Bienvenue sur CivFrData</h1>
-    <p class="lead">La plateforme dédiée aux statistiques de Civilization.</p>
-    <hr class="my-4">
-    <p>Explorez les matchs, les joueurs et les équipes pour mieux comprendre la stratégie et l'histoire de vos parties.</p>
+  <!-- Section Hero avec dégradé sombre -->
+  <div class="p-5 text-center" style="background: linear-gradient(135deg, #2c3e50, #000000); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h1 class="display-4 text-white fw-bold">Bienvenue sur CivFrData</h1>
+    <p class="lead text-white">La plateforme dédiée aux statistiques de Civilization.</p>
+    <hr class="my-4 border-light">
+    <p class="text-white">Explorez les matchs, les joueurs et les équipes pour mieux comprendre la stratégie et l'histoire de vos parties.</p>
   </div>
 
-  <!-- Zones par Division -->
-  <div class="container ">
-    <div class="row">
-      {% for division in order %}
-        {% if divisions[division] is defined %}
-          <div class="col-md-3 mb-4">
-            <h3 class="text-center">Division {{ division }}</h3>
-            <ul class="list-group">
-              {% for team in divisions[division] %}
-                <li class="list-group-item"  style="background-color: #FFDAB9;">
-                  <a href="{{ url_for('team_details', team_name=team['team_name']) }}" style="text-decoration: none;">
-                    {{ team['team_name'] }}
-                  </a>
-                  <br>
-                  <small>
-                    Rang: {{ team['ranking'] }} - V: {{ team['wins'] }}, D: {{ team['loses'] }}
-                  </small>
-                </li>
-              {% endfor %}
-            </ul>
+  <!-- Tableaux des Divisions -->
+  <div class="row mt-5">
+    {% for division in order %}
+      {% if divisions[division] is defined %}
+        <div class="col-md-6 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white text-center">
+              Division {{ division }}
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-dark table-striped m-0">
+                <thead>
+                  <tr>
+                    <th scope="col">Équipe</th>
+                    <th scope="col">Rang</th>
+                    <th scope="col">Victoires</th>
+                    <th scope="col">Défaites</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for team in divisions[division] %}
+                    <tr>
+                      <td>
+                        <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                          {{ team['team_name'] }}
+                        </a>
+                      </td>
+                      <td>{{ team['ranking'] }}</td>
+                      <td>{{ team['wins'] }}</td>
+                      <td>{{ team['loses'] }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
-        {% endif %}
-      {% endfor %}
-    </div>
+        </div>
+      {% endif %}
+    {% endfor %}
   </div>
 </div>
 {% endblock %}
