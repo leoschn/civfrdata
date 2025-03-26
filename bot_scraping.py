@@ -189,7 +189,7 @@ async def on_ready():
 
     await client.close()
 
-with open('token.txt', 'r') as file:
+with open('./token.txt', 'r') as file:
     token = file.read().replace('\n', '')
 
 client.run(token)
