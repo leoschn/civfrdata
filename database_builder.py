@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 def add_new_tables_to_db(db_file):
@@ -159,5 +160,9 @@ def add_new_tables_to_db(db_file):
     print(f"Nouvelles tables ajoutées dans '{db_file}' : {len(players_dict)} joueurs et {len(teams_dict)} équipes.")
 
 if __name__ == '__main__':
-    db_file = "database.db"  # Nom de votre base de données initiale
-    add_new_tables_to_db(db_file)
+    script_path = os.path.abspath(__file__)
+    path_list = script_path.split(os.sep)
+    script_directory = path_list[0:len(path_list) - 1]
+    rel_path = "database.db"
+    path = "/".join(script_directory) + "/" + rel_path # Nom de votre base de données initiale
+    add_new_tables_to_db(path)
