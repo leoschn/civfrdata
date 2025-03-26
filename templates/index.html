@@ -33,136 +33,36 @@
 
 {% block content %}
     {% for game in games %}
-        {% if game['Winner'] == game['Team A'] %}
-            <a  href="{{ url_for('game', game_id=game['id']) }}">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <span class="text-team"> {{ game['Team A'] }} </span>
+        {% set team_a_color = "rgba(0, 255, 0, 0.5)" if game['Winner'] == game['Team A'] else "rgba(255, 0, 0, 0.5)" if game['Winner'] == game['Team B'] else "rgba(255, 255, 0, 0.5)" %}
+        {% set team_b_color = "rgba(0, 255, 0, 0.5)" if game['Winner'] == game['Team B'] else "rgba(255, 0, 0, 0.5)" if game['Winner'] == game['Team A'] else "rgba(255, 255, 0, 0.5)" %}
+        
+        <a href="{{ url_for('game', game_id=game['id']) }}">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-1" style="background-color: {{ team_a_color }}">
+                        <span class="text-team"> {{ game['Team A'] }} </span>
+                    </div>
+                    {% for pick in ['PickA1', 'PickA2', 'PickA3', 'PickA4'] %}
+                        <div class="col-md-1" style="background-color: {{ team_a_color }}">
+                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
                         </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{ url_civ[game['PickA1']] }}" />
+                    {% endfor %}
+                    <div class="col-md-1">
+                        <img class="img-fluid" alt="{{ game['Map played'] }}" title="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
+                    </div>
+                    {% for pick in ['PickB1', 'PickB2', 'PickB3', 'PickB4'] %}
+                        <div class="col-md-1" style="background-color: {{ team_b_color }}">
+                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
                         </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{ url_civ[game['PickA2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{ url_civ[game['PickA3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{ url_civ[game['PickA4']] }}" />
-                        </div>
-                        <div class="col-md-1">
-                            <img class="img-fluid" title="{{ game['Map played'] }}" alt="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{ url_civ[game['PickB1']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{ url_civ[game['PickB2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{ url_civ[game['PickB3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{ url_civ[game['PickB4']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <span class="text-team"> {{ game['Team B'] }} </span>
-                        </div>
-                        <div class="col-md-1" >
-                            <span class="text-team"> {{ game['Date'] }} </span>
-                        </div>
+                    {% endfor %}
+                    <div class="col-md-1" style="background-color: {{ team_b_color }}">
+                        <span class="text-team"> {{ game['Team B'] }} </span>
+                    </div>
+                    <div class="col-md-1">
+                        <span class="text-team"> {{ game['Date'] }} </span>
                     </div>
                 </div>
-
-            </a>
-        {% elif game['Winner'] == game['Team B'] %}
-            <a href="{{ url_for('game', game_id=game['id']) }}">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <span class="text-team"> {{ game['Team A'] }} </span>
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{ url_civ[game['PickA1']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{ url_civ[game['PickA2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{ url_civ[game['PickA3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 0, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{ url_civ[game['PickA4']] }}" />
-                        </div>
-                        <div class="col-md-1">
-                            <img class="img-fluid" title="{{ game['Map played'] }}" alt="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{ url_civ[game['PickB1']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{ url_civ[game['PickB2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{url_civ[game['PickB3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{ url_civ[game['PickB4']]}}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(0, 255, 0, 0.5)">
-                            <span class="text-team">  {{ game['Team B'] }} </span>
-                        </div>
-                        <div class="col-md-1" >
-                            <span class="text-team"> {{ game['Date'] }} </span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        {% else %}
-            <a href="{{ url_for('game', game_id=game['id']) }}">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <span class="text-team"> {{ game['Team A'] }} </span>
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{  url_civ[game['PickA1']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{  url_civ[game['PickA2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{  url_civ[game['PickA3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{  url_civ[game['PickA4']] }}" />
-                        </div>
-                        <div class="col-md-1">
-                            <img class="img-fluid" title="{{ game['Map played'] }}" alt="{{ game['Map played'] }}" src="{{  url_map[game['Map played']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{  url_civ[game['PickB1']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{  url_civ[game['PickB2']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{  url_civ[game['PickB3']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{  url_civ[game['PickB4']] }}" />
-                        </div>
-                        <div class="col-md-1" style="background-color: rgba(255, 255, 0, 0.5)">
-                            <span class="text-team"> {{ game['Team B'] }} </span>
-                        </div>
-                        <div class="col-md-1" >
-                            <span class="text-team"> {{ game['Date'] }} </span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        {% endif %}
+            </div>
+        </a>
     {% endfor %}
 {% endblock %}
