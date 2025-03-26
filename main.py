@@ -1,9 +1,13 @@
 import sqlite3
-from flask import Flask, render_template, url_for, request
+from flask import Flask, render_template, url_for, request, Response
 from werkzeug.exceptions import abort
 from collections import defaultdict
+import csv
+import io
 
 # Listes modifiées avec le joli nom (display name)
+from werkzeug.utils import redirect
+
 list_civ_url = [
     ("abraham lincoln", 'Abraham_Lincoln_29.webp', "Abraham Lincoln"),
     ("alexander", 'Alexander_29.webp', "Alexander"),
@@ -445,6 +449,11 @@ def search():
     map = request.form.get('map')
     div = request.form.get('div')
     conn = get_db_connection()
+    list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
+    list_team = conn.execute('SELECT DISTINCT "Team A" FROM games').fetchall()
+    list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
+
+
     if map == 'None' and div=='None' and team=='None':
         games = conn.execute('SELECT * FROM games ').fetchall()
     elif map == 'None' and div=='None':
@@ -462,7 +471,121 @@ def search():
     else :
         games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? ) AND ("Division" = ? )', (team, team, map, div)).fetchall()
     conn.close()
-    return render_template('index.html', games=games, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME)
+    return render_template('index.html', games=games,url_civ=CIV_ASSETS_NAMES,
+                           url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div)
 
+
+@app.route('/download_csv/<csv_type>', methods=['GET'])
+def download_csv(csv_type):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        if csv_type == 'games':
+            # La table "games" contient des colonnes comme "Team A", "Team B", "Winner", "Map played", etc.
+            cursor.execute("SELECT * FROM games")
+            rows = cursor.fetchall()
+            header = [col[0] for col in cursor.description]
+
+        elif csv_type == 'teams':
+            query = """
+            SELECT 
+                t.team_name AS team_name,
+                group_concat(DISTINCT p.pseudo) AS players,
+                (
+                    SELECT group_concat(map_info, ', ')
+                    FROM (
+                        SELECT g."Map played" || ' (' || COUNT(*) || ')' AS map_info
+                        FROM team_games tg2
+                        JOIN games g ON tg2.game_id = g.id
+                        WHERE tg2.team_name = t.team_name
+                        GROUP BY g."Map played"
+                    )
+                ) AS maps_played
+            FROM teams t
+            LEFT JOIN team_players tp ON t.team_name = tp.team_name
+            LEFT JOIN players p ON tp.player_id = p.player_id
+            GROUP BY t.team_name
+            """
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            header = [desc[0] for desc in cursor.description]
+
+        elif csv_type == 'players':
+            query = """
+            SELECT 
+                p.pseudo AS player_name,
+                t.team_name AS team_name,
+                (
+                    SELECT group_concat(civ_info, ', ')
+                    FROM (
+                        SELECT civ || ' (' || COUNT(*) || ')' AS civ_info
+                        FROM (
+                            SELECT "PlayerA1" AS player, "PickA1" AS civ FROM games
+                            UNION ALL
+                            SELECT "PlayerA2", "PickA2" FROM games
+                            UNION ALL
+                            SELECT "PlayerB1", "PickB1" FROM games
+                            UNION ALL
+                            SELECT "PlayerB2", "PickB2" FROM games
+                            UNION ALL
+                            SELECT "PlayerA3", "PickA3" FROM games
+                            UNION ALL
+                            SELECT "PlayerB3", "PickB3" FROM games
+                            UNION ALL
+                            SELECT "PlayerA4", "PickA4" FROM games
+                            UNION ALL
+                            SELECT "PlayerB4", "PickB4" FROM games
+                        ) AS picks
+                        WHERE picks.player = p.pseudo
+                        GROUP BY civ
+                    )
+                ) AS civ_picks
+            FROM players p
+            LEFT JOIN team_players tp ON p.player_id = tp.player_id
+            LEFT JOIN teams t ON tp.team_name = t.team_name
+            GROUP BY p.player_id, p.pseudo, t.team_name
+            """
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            header = [desc[0] for desc in cursor.description]
+
+        else:
+            conn.close()
+            return redirect(url_for('db_view'))
+
+    except Exception as e:
+        conn.close()
+        return f"Erreur lors de la récupération des données pour {csv_type}: {e}"
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow(row)
+    csv_content = output.getvalue()
+    output.close()
+
+    # Ajout d'une marque BOM pour l'UTF-8 (utile pour Excel)
+    csv_content = '\ufeff' + csv_content
+
+    response = Response(csv_content, mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename={csv_type}.csv"
+    return response
+
+
+
+
+
+
+@app.route('/db_view', methods=['GET'])
+def db_view():
+    # On affiche des liens pour télécharger les différents CSV
+    csv_options = {
+        'games': 'Télécharger CSV des Games',
+        'teams': 'Télécharger CSV des Équipes',
+        'players': 'Télécharger CSV des Joueurs'
+    }
+    return render_template('db_view.html', csv_options=csv_options)
 if __name__ == '__main__':
   app.run()
