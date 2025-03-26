@@ -1,3 +1,5 @@
+import os
+
 import discord
 import datetime
 import pandas as pd
@@ -189,7 +191,12 @@ async def on_ready():
 
     await client.close()
 
-with open('./token.txt', 'r') as file:
+script_path = os.path.abspath(__file__)
+path_list = script_path.split(os.sep)
+script_directory = path_list[0:len(path_list)-1]
+rel_path = "token.txt"
+path = "/".join(script_directory) + "/" + rel_path
+with open(path, 'r') as file:
     token = file.read().replace('\n', '')
 
 client.run(token)
