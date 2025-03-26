@@ -179,8 +179,7 @@ async def on_ready():
 
     connection = sqlite3.connect('database.db')
 
-    with open('schema.sql') as f:
-        connection.executescript(f.read())
+    connection.execute("DROP TABLE IF EXISTS games")
 
     data = pd.read_csv('data_S15.csv')
     data['id'] = data.index
