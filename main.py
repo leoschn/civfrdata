@@ -1,3 +1,4 @@
+from datetime import datetime
 import sqlite3
 from flask import Flask, render_template, url_for, request, Response
 from werkzeug.exceptions import abort
@@ -405,6 +406,8 @@ def index():
     list_team = conn.execute('SELECT DISTINCT "Team A" FROM games').fetchall()
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
     conn.close()
+    # tri des games par date, décroissant
+    games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     return render_template('index_search_bar.html', games=games, url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div)
 
@@ -471,6 +474,7 @@ def search():
     else :
         games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? ) AND ("Division" = ? )', (team, team, map, div)).fetchall()
     conn.close()
+    games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     return render_template('index.html', games=games,url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div)
 
