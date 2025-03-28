@@ -82,7 +82,7 @@ list_civ_url = [
     ("trajan", 'Trajan_29.webp', "Trajan"),
     ("victoria", 'Victoria_29.webp', "Victoria"),
     ("victoria age of steam", 'Victoria_29_29.webp', "Victoria Age of Steam"),
-    ("wilfred laurier", 'Wilfrid_Laurier_29.webp', "Wilfred Laurier"),
+    ("wilfrid laurier", 'Wilfrid_Laurier_29.webp', "Wilfrid Laurier"),
     ("wilhelmina", 'Wilhelmina_29.webp', "Wilhelmina"),
     ("wu zetian", 'Wu_Zetian_29.webp', "Wu Zetian"),
     ("yongle", 'Yongle_29.webp', "Yongle"),
