@@ -53,6 +53,35 @@ def extract_from_string_raw(s, player_id_dict, role_id_dict, verbose=False):
         except:
             data['Winner'] ='UNKNOWN'
 
+        # extract victory type
+        if ' cc ' in  splited_s[1 + dec].strip():
+            data['Victory']= 'CC'
+        elif 'diplo' in  splited_s[1 + dec].strip():
+            data['Victory'] = 'Diplo'
+        elif 'scien' in  splited_s[1 + dec].strip():
+            data['Victory'] = 'Science'
+        elif 'cultur' in  splited_s[1 + dec].strip():
+            data['Victory'] = 'Culture'
+        elif 'milita' in  splited_s[1 + dec].strip():
+            data['Victory'] = 'Military'
+        elif 'religi' in  splited_s[1 + dec].strip():
+            data['Victory'] = 'Religious'
+        else :
+            data['Victory'] = 'UNKNOWN'
+
+        # extract victory turn
+        try :
+
+            data['Victory Turn'] = int(re.findall(r'\d+', splited_s[1 + dec])[-1])
+            if data['Victory Turn'] > 200 :
+                data['Victory Turn'] = 'UNKNOWN'
+        except :
+            data['Victory Turn']  = 'UNKNOWN'
+
+
+
+
+        data['Map played'] = splited_s[2 + dec].strip()
 
         #extract map
         data['Map played']=splited_s[2+dec].strip()
