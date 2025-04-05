@@ -57,6 +57,16 @@
                           {{ match.opponent }}
                         </a>
                       </span>
+                      <span>
+                        By
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                          {{ match.v_type }}
+                        </a>
+                          T
+                        <a  href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                          {{ match.v_turn }}
+                        </a>
+                      </span>
                       <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">{{ match.date }}</a></span>
                     </div>
                   </li>
@@ -70,6 +80,16 @@
                         vs.
                         <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info" style="text-decoration: none;">
                           {{ match.opponent }}
+                        </a>
+                      </span>
+                                            <span>
+                        By
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                          {{ match.v_type }}
+                        </a>
+                          T
+                        <a  href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                          {{ match.v_turn }}
                         </a>
                       </span>
                       <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">{{ match.date }}</a></span>

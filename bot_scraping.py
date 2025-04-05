@@ -57,11 +57,11 @@ def extract_from_string_raw(s, player_id_dict, role_id_dict, verbose=False):
         if ' cc ' in  splited_s[1 + dec].strip():
             data['Victory']= 'CC'
         elif 'diplo' in  splited_s[1 + dec].strip():
-            data['Victory'] = 'Diplo'
+            data['Victory'] = 'Diplomatic'
         elif 'scien' in  splited_s[1 + dec].strip():
-            data['Victory'] = 'Science'
+            data['Victory'] = 'Scientific'
         elif 'cultur' in  splited_s[1 + dec].strip():
-            data['Victory'] = 'Culture'
+            data['Victory'] = 'Cultural'
         elif 'milita' in  splited_s[1 + dec].strip():
             data['Victory'] = 'Military'
         elif 'religi' in  splited_s[1 + dec].strip():

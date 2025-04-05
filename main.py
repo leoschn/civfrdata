@@ -292,12 +292,19 @@ def get_team_stats(team_name):
             maps_counts[map_played] = maps_counts.get(map_played, 0) + 1
         id = game["index"]
 
+        #Récupérer le type et tour de victoire
+        v_type = game['Victory']
+        v_turn = game['Victory Turn']
+
+
         matches.append({
             "opponent": opponent,
             "result": result,
             "date": match_date,
             "map": map_played,
-            "id": id
+            "id": id,
+            'v_type' : v_type,
+            'v_turn' :v_turn
         })
 
     total_games = len(matches)
