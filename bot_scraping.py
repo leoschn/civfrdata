@@ -10,6 +10,12 @@ import re
 import os
 import sqlite3
 
+script_path = os.path.abspath(__file__)
+path_list = script_path.split(os.sep)
+script_directory = path_list[0:len(path_list)-1]
+base_path =  "/".join(script_directory) + "/"
+
+
 def add_new_tables_to_db(db_file):
     # Connexion à la base de données source (contenant la table "games")
     conn = sqlite3.connect(db_file)
@@ -211,15 +217,15 @@ async def on_ready():
             df3b['Division'] = '3b'
 
             df = pd.concat([df1, df2, df3a, df3b], axis=0)
-            df.to_csv('data_S15.csv', index=False)
+            df.to_csv(base_path + 'data_S15.csv', index=False)
 
     print('report scrapped')
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(base_path + 'database.db')
 
     conn.execute("DROP TABLE IF EXISTS games")
 
-    data = pd.read_csv('data_S15.csv')
+    data = pd.read_csv(base_path + 'data_S15.csv')
     data['id'] = data.index
     data.to_sql('games', conn)
 
@@ -383,12 +389,8 @@ async def on_ready():
 
     await client.close()
 
-script_path = os.path.abspath(__file__)
-path_list = script_path.split(os.sep)
-script_directory = path_list[0:len(path_list)-1]
-rel_path = "token.txt"
-path = "/".join(script_directory) + "/" + rel_path
-with open(path, 'r') as file:
+path_token = base_path + "token.txt"
+with open(path_token, 'r') as file:
     token = file.read().replace('\n', '')
 
 client.run(token)
