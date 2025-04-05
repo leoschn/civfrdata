@@ -194,13 +194,20 @@ def get_player_stats(player_name):
                     wins += 1
                 civilization = game["PickA" + pos].strip() if game["PickA" + pos] else ""
                 map_played = game["Map played"].strip() if game["Map played"] else ""
+
+                # Récupérer le type et tour de victoire
+                v_type = game['Victory']
+                v_turn = game['Victory Turn']
+
                 matches.append({
                     "opponent": opponent,
                     "result": result,
                     "civilization": civilization,
                     "map": map_played,
                     "date": date,
-                    "id": game_id
+                    "id": game_id,
+                    'v_type': v_type,
+                    'v_turn': v_turn
                 })
                 # Comptage des civilisations
                 if civilization:
@@ -223,13 +230,20 @@ def get_player_stats(player_name):
                         wins += 1
                     civilization = game["PickB" + pos].strip() if game["PickB" + pos] else ""
                     map_played = game["Map played"].strip() if game["Map played"] else ""
+
+                    # Récupérer le type et tour de victoire
+                    v_type = game['Victory']
+                    v_turn = game['Victory Turn']
+
                     matches.append({
                         "opponent": opponent,
                         "result": result,
                         "civilization": civilization,
                         "map": map_played,
                         "date": date,
-                        "id": game_id
+                        "id": game_id,
+                        'v_type': v_type,
+                        'v_turn': v_turn
                     })
                     if civilization:
                         civ_counts[civilization] = civ_counts.get(civilization, 0) + 1

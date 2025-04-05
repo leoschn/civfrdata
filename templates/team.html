@@ -4,176 +4,190 @@
 
 {% block content %}
 <div class="container my-5">
-  <!-- En-tête -->
-  <div class="p-5 rounded-4 shadow-lg mb-5" style="background: linear-gradient(135deg, #2c3e50, #000000);">
-    <h1 class="display-4 text-center text-white">Équipe : {{ team.team }} (D{{ team.division }})</h1>
-  </div>
-  
-  <!-- Informations générales sur l'équipe -->
-  <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
-    <div class="card-body">
-      <h4 class="card-title">Informations</h4>
-      <p class="card-text">
-        <strong>Winrate :</strong> {{ (team.winrate * 100) | round(2) }}% <br>
-        <strong>Total Games :</strong> {{ team.total_games }} <br>
-        <strong>Wins :</strong> {{ team.wins }} | <strong>Losses :</strong> {{ team.total_games - team.wins }}
-      </p>
+    <!-- En-tête -->
+    <div class="p-5 rounded-4 shadow-lg mb-5" style="background: linear-gradient(135deg, #2c3e50, #000000);">
+        <h1 class="display-4 text-center text-white">Équipe : {{ team.team }} (D{{ team.division }})</h1>
     </div>
-  </div>
 
-  <div class="row mb-5">
-    <!-- Winrate Chart -->
-    <div class="col-md-4 mb-4">
-      <div class="card bg-dark text-white shadow" style="border: 1px solid #ffffff;">
-        <div class="card-header text-center" style="background-color: #495057;">
-          <h5 class="mb-0">Winrate</h5>
+    <!-- Informations générales sur l'équipe -->
+    <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
+        <div class="card-body">
+            <h4 class="card-title">Informations</h4>
+            <p class="card-text">
+                <strong>Winrate :</strong> {{ (team.winrate * 100) | round(2) }}% <br>
+                <strong>Total Games :</strong> {{ team.total_games }} <br>
+                <strong>Wins :</strong> {{ team.wins }} | <strong>Losses :</strong> {{ team.total_games - team.wins }}
+            </p>
         </div>
-        <div class="card-body d-flex justify-content-center">
-          <canvas id="winrateChart" width="200" height="200"></canvas>
-        </div>
-      </div>
-      <p class="text-center text-white mt-2">{{ (team.winrate * 100) | round(2) }}% de victoires</p>
     </div>
-    
-    <!-- Historique des matchs -->
-    <div class="col-md-8 mb-4">
-      <div class="card bg-dark text-white shadow" style="border: 1px solid #ffffff;">
-        <div class="card-header" style="background-color: #495057;">
-          <h5 class="mb-0 text-center">Historique des matchs</h5>
+
+    <div class="row mb-5">
+        <!-- Winrate Chart -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white shadow" style="border: 1px solid #ffffff;">
+                <div class="card-header text-center" style="background-color: #495057;">
+                    <h5 class="mb-0">Winrate</h5>
+                </div>
+                <div class="card-body d-flex justify-content-center">
+                    <canvas id="winrateChart" width="200" height="200"></canvas>
+                </div>
+            </div>
+            <p class="text-center text-white mt-2">{{ (team.winrate * 100) | round(2) }}% de victoires</p>
         </div>
-        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-          {% if team.matches %}
-            <ul class="list-group list-group-flush">
-              {% for match in team.matches|reverse %}
-                {% if match.result == 'win' %}
-                  <li class="list-group-item bg-success bg-opacity-25 text-white" style="border: 1px solid #ffffff;">
-                    <div class="d-flex justify-content-between align-items-center">
+
+        <!-- Historique des matchs -->
+        <div class="col-md-8 mb-4">
+            <div class="card bg-dark text-white shadow" style="border: 1px solid #ffffff;">
+                <div class="card-header" style="background-color: #495057;">
+                    <h5 class="mb-0 text-center">Historique des matchs</h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    {% if team.matches %}
+                    <ul class="list-group list-group-flush">
+                        {% for match in team.matches|reverse %}
+                        {% if match.result == 'win' %}
+                        <li class="list-group-item bg-success bg-opacity-25 text-white"
+                            style="border: 1px solid #ffffff;">
+                            <div class="d-flex justify-content-between align-items-center">
                       <span>
-                        <a href="{{ url_for('team_details', team_name=team.team) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('team_details', team_name=team.team) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ team.team }}
                         </a>
                         vs.
-                        <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.opponent }}
                         </a>
                       </span>
-                      <span>
-                        By
-                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                                <span>
+                        Victory By
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.v_type }}
                         </a>
                           T
-                        <a  href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.v_turn }}
                         </a>
                       </span>
-                      <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">{{ match.date }}</a></span>
-                    </div>
-                  </li>
-                {% else %}
-                  <li class="list-group-item bg-danger bg-opacity-25 text-white" style="border: 1px solid #ffffff;">
-                    <div class="d-flex justify-content-between align-items-center">
+                                <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                                                 style="text-decoration: none;">{{ match.date }}</a></span>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item bg-danger bg-opacity-25 text-white"
+                            style="border: 1px solid #ffffff;">
+                            <div class="d-flex justify-content-between align-items-center">
                       <span>
-                        <a href="{{ url_for('team_details', team_name=team.team) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('team_details', team_name=team.team) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ team.team }}
                         </a>
                         vs.
-                        <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.opponent }}
                         </a>
                       </span>
-                                            <span>
-                        By
-                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                                <span>
+                        Defeat By
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.v_type }}
                         </a>
                           T
-                        <a  href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">
+                        <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                           style="text-decoration: none;">
                           {{ match.v_turn }}
                         </a>
                       </span>
-                      <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info" style="text-decoration: none;">{{ match.date }}</a></span>
-                    </div>
-                  </li>
-                {% endif %}
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-center">Aucun match enregistré.</p>
-          {% endif %}
+                                <span>game du <a href="{{ url_for('game', game_id=match['id']) }}" class="text-info"
+                                                 style="text-decoration: none;">{{ match.date }}</a></span>
+                            </div>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-center">Aucun match enregistré.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Section Joueurs de l'équipe -->
-  <h2 class="text-white mt-5">Joueurs de l'équipe</h2>
-  {% if team.players %}
+    <!-- Section Joueurs de l'équipe -->
+    <h2 class="text-white mt-5">Joueurs de l'équipe</h2>
+    {% if team.players %}
     <div class="row">
-      {% for player in team.players %}
+        {% for player in team.players %}
         <div class="col-md-3 mb-4">
-          <div class="card bg-dark text-white shadow-sm rounded" style="border: 1px solid #ffffff;">
-            <div class="card-body text-center">
-              <h5 class="card-title">{{ player['pseudo'] }}</h5>
-              <a href="{{ url_for('player_details', player_name=player['pseudo']) }}" class="btn btn-outline-light btn-sm rounded-pill">Voir détails</a>
+            <div class="card bg-dark text-white shadow-sm rounded" style="border: 1px solid #ffffff;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ player['pseudo'] }}</h5>
+                    <a href="{{ url_for('player_details', player_name=player['pseudo']) }}"
+                       class="btn btn-outline-light btn-sm rounded-pill">Voir détails</a>
+                </div>
             </div>
-          </div>
         </div>
-      {% endfor %}
+        {% endfor %}
     </div>
-  {% else %}
+    {% else %}
     <p class="text-white">Aucun joueur trouvé pour cette équipe.</p>
-  {% endif %}
-  
-  <!-- Section Maps Jouées -->
-  <h2 class="text-white mt-5 style="border: 10px solid black;">Maps Played </h2>
-  {% if team.maps %}
+    {% endif %}
+
+    <!-- Section Maps Jouées -->
+    <h2 class="text-white mt-5">Maps Played </h2>
+    {% if team.maps %}
     <div class="row">
-      {% for map, count in team.maps.items() %}
+        {% for map, count in team.maps.items() %}
         <div class="col-sm-3 col-md-2 mb-3">
-          <div class="card bg-dark text-center shadow-sm rounded" style="border: 1px solid #ffffff;">
-            <img class="card-img-top p-2" src="{{ url_map[map] }}" alt="{{ map }}" title="{{ map }}" style="height: 80px; object-fit: contain; background-color: #212529;">
-            <div class="card-body p-2">
-              <h6 class="card-title text-white mb-1">{{ display_map[map] }}</h6>
-              <p class="card-text small text-white-50">{{ count }} fois</p>
+            <div class="card bg-dark text-center shadow-sm rounded" style="border: 1px solid #ffffff;">
+                <img class="card-img-top p-2" src="{{ url_map[map] }}" alt="{{ map }}" title="{{ map }}"
+                     style="height: 80px; object-fit: contain; background-color: #212529;">
+                <div class="card-body p-2">
+                    <h6 class="card-title text-white mb-1">{{ display_map[map] }}</h6>
+                    <p class="card-text small text-white-50">{{ count }} fois</p>
+                </div>
             </div>
-          </div>
         </div>
-      {% endfor %}
+        {% endfor %}
     </div>
-  {% else %}
+    {% else %}
     <p class="text-white">Aucune donnée de map.</p>
-  {% endif %}
+    {% endif %}
 </div>
 
 <!-- Chart.js pour le graphique winrate -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  var ctx = document.getElementById('winrateChart').getContext('2d');
-  var winrateChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-          labels: ['Victoires', 'Défaites'],
-          datasets: [{
-              data: [{{ team.wins }}, {{ team.total_games - team.wins }}],
-              backgroundColor: ['#28a745', '#dc3545']
-          }]
-      },
-      options: {
-          responsive: false,
-          plugins: {
-              legend: { display: false },
-              tooltip: {
-                  callbacks: {
-                      label: function(context) {
-                          var label = context.label || '';
-                          var value = context.parsed;
-                          return label + ': ' + value;
-                      }
-                  }
-              }
-          }
-      }
-  });
+    var ctx = document.getElementById('winrateChart').getContext('2d');
+    var winrateChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Victoires', 'Défaites'],
+            datasets: [{
+                data: [{{ team.wins }}, {{ team.total_games - team.wins }}],
+                backgroundColor: ['#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            var label = context.label || '';
+                            var value = context.parsed;
+                            return label + ': ' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
 </script>
 {% endblock %}
