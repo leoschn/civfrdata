@@ -3,7 +3,6 @@ import os
 import discord
 import datetime
 import pandas as pd
-from sympy import limit
 from unidecode import unidecode
 import sqlite3
 import re
