@@ -3,6 +3,7 @@ import os
 import discord
 import datetime
 import pandas as pd
+from sympy import limit
 from unidecode import unidecode
 import sqlite3
 import re
@@ -193,25 +194,25 @@ async def on_ready():
 
 
             c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d1')
-            messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30))]
+            messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
             df1 = pd.DataFrame(messages)
             df1 = extract_from_serie_raw(df1, player_id_dict, role_id_dict)
             df1['Division'] = '1'
 
             c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d2')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30))]
+            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
             df2 = pd.DataFrame(messages)
             df2 = extract_from_serie_raw(df2, player_id_dict, role_id_dict)
             df2['Division'] = '2'
 
             c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3a')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30))]
+            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
             df3a= pd.DataFrame(messages)
             df3a = extract_from_serie_raw(df3a, player_id_dict, role_id_dict)
             df3a['Division'] = '3a'
 
             c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3b')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30))]
+            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
             df3b = pd.DataFrame(messages)
             df3b = extract_from_serie_raw(df3b, player_id_dict, role_id_dict)
             df3b['Division'] = '3b'
