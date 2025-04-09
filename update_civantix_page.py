@@ -1,7 +1,6 @@
 import os
 import random
 
-from sympy.multipledispatch.dispatcher import source
 
 script_path = os.path.abspath(__file__)
 path_list = script_path.split(os.sep)
