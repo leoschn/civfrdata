@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Civantix</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #f0f0f0;
+            font-family: sans-serif;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #input-zone {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            margin-right: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        .word-box {
+            display: inline-block;
+            min-width: 1rem;
+            padding: 0.1rem 0.5rem;
+            margin: 0.1rem;
+            border-radius: 8px;
+            background-color: #333;
+            text-align: center;
+            position: relative; /* nécessaire pour le ::after */
+        }
+
+        .word-box:hover::after {
+            content: attr(data-length) " lettres";
+            position: absolute;
+            background: #222;
+            color: white;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transform: translateY(-150%);
+            z-index: 100;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .guessed {
+            color: #f0f0f0;
+            font-family: sans-serif;
+            padding: 1rem;
+        }
+
+        .punct {
+            display: inline;
+            margin: 0.1rem;
+        }
+
+        .history {
+            background-color: #1e1e1e;
+            margin-top: 1rem;
+            padding: 0.2rem;
+            border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 200px;
+        }
+
+        .victory {
+            font-size: 1.5rem;
+            text-align: center;
+            color: limegreen;
+            padding : 2 rem;
+        }
+
+        #container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #clue {
+            display: none; /* Texte caché initialement */
+            margin-top: 20px;
+            color :#567fb4;
+            font-size: 1.2em;
+            padding: 10px;
+        }
+
+        #revealButton {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Civantix</h1>
+
+    <div id="input-zone">
+        <input id="guess" type="text" placeholder="Entrez un mot">
+        <button id="ok-button" style="background-color:#539147; color: white;" onclick="submitGuess()">Valider</button>
+        <button style="background-color:#3477ad; color: white;" onclick="location.href='/reset'">Recommencer</button>
+        <button id="give-up-button" style="background-color: #a22; color: white;" onclick="giveUp()">Abandonner ?</button>
+    </div>
+
+    <div id="feedback" style="margin-top: 1rem; color: #ff6666; font-weight: bold;"></div>
+
+    <div id="container">
+        <button id="revealButton" onclick="revealClue()">Double clic pour révéler la catégorie</button>
+        <div id="clue">{{ clue }}</div>
+    </div>
+
+    <div id="victory-message" class="victory" style="display: none;">
+        🎉 Félicitations !
+    </div>
+    
+    <div class="section" id="title">
+        {% for token in title %}
+            {% if token.is_word %}
+                {% if not token.revealed %}
+                    <span class="word-box" id="title-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
+                        &nbsp;
+                    </span>
+                {% else %}
+                    <span class="guessed">{{ token.word }}</span>
+                {% endif %}
+            {% else %}
+                <span class="punct">{{ token.word }}</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="section" id="text">
+        {% for token in text %}
+            {% if token.is_word %}
+                    {% if not token.revealed %}
+                        <span class="word-box" id="text-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
+                            &nbsp;
+                        </span>
+                    {% else %}
+                        <span class="guessed">{{ token.word }}</span>
+                    {% endif %}
+            {% else %}
+                <span class="punct">{{ token.word }}</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 10px; margin-bottom:10px;">Essais : <span id="attempts">0</span></div>
+
+    <div class="history" id="history">
+        <ul id="history-list"></ul>
+    </div>
+
+    <script>
+        function revealClue() {
+        document.getElementById("revealButton").addEventListener("click", function() {
+            this.style.display = "none";
+            document.getElementById("clue").style.display = "block";
+        });
+        }
+
+        function viridis(score) {
+            const t = (score - 0.6) / 0.05;
+            const c = Math.max(0, Math.min(1, t));
+            const hue = c * 118;
+            return `hsl(${hue}, 50%, 25%)`;
+        }
+        let attempts = 0;
+
+function submitGuess() {
+    const word = document.getElementById("guess").value.trim().toLowerCase();
+    const feedback = document.getElementById("feedback");
+    if (!word) return;
+
+    axios.post("/guess", { word: word })
+        .then(res => {
+            const { updates, victory, status } = res.data;
+
+            if (status === "not_found") {
+                feedback.innerText = `« ${word} » n'est pas reconnu.`;
+                return;
+            }
+
+            // Si on arrive ici, le mot est valide
+            feedback.innerText = ""; // On efface le message précédent
+            attempts += 1;
+            document.getElementById("attempts").innerText = attempts;
+
+            // Historique
+            const hist = document.getElementById("history-list");
+            const li = document.createElement("li");
+            li.innerText = word;
+            hist.prepend(li);
+
+            // Mots révélés ou colorés
+            updates.forEach(update => {
+                const id = `${update.section}-${update.index}`;
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                el.innerText = update.word;
+                el.style.backgroundColor = update.revealed ? "#121212" : viridis(update.score);
+            });
+
+            // Victoire ?
+            if (victory) {
+                document.getElementById("victory-message").style.display = "block";
+                updates.forEach(update => {
+                    const id = `${update.section}-${update.index}`;
+                    const el = document.getElementById(id);
+                    el.innerText = update.word;
+                    el.style.backgroundColor = "#121212";
+                });
+            }
+
+            document.getElementById("guess").value = "";
+        })
+        .catch(err => {
+            feedback.innerText = "Erreur lors de la requête.";
+            console.error(err);
+        });
+}
+
+        var input = document.getElementById("guess");
+        // Execute a function when the user presses a key on the keyboard
+        input.addEventListener("keypress", function(event) {
+        // If the user presses the "Enter" key on the keyboard
+        if (event.key === "Enter") {
+            // Cancel the default action, if needed
+            event.preventDefault();
+            // Trigger the button element with a click
+            document.getElementById("ok-button").click();
+        }
+
+
+    }); 
+
+        function giveUp() {
+            axios.post("/giveup")
+                .then(res => {
+                    const updates = res.data.updates;
+
+                    updates.forEach(update => {
+                        const id = `${update.section}-${update.index}`;
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.innerText = update.word;
+                            el.style.backgroundColor = "#121212";
+                        }
+                    });
+
+                    // Masquer le bouton d'abandon une fois cliqué (optionnel)
+                    document.getElementById("give-up-button").style.display = "none";
+                });
+        }
+
+    </script>
+</body>
+</html>
