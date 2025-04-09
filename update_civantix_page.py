@@ -20,7 +20,7 @@ def load_sources_from_file(file_path): #fluk
         return []
 
 def get_random_source(): #fluk
-    sources = load_sources_from_file("sources.txt")
+    sources = load_sources_from_file(base_path+"sources.txt")
     if sources:
         return random.choice(sources)
     else:
@@ -28,5 +28,5 @@ def get_random_source(): #fluk
 
 new_source = get_random_source()
 
-with open('daily_source.txt','w') as f:
+with open(base_path+'daily_source.txt','w') as f:
     f.write(new_source)
