@@ -705,113 +705,115 @@ structured_title, structured_text = init_data()
 @app.route('/civantix')
 def civantix():
     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
-#
-#
-# @app.route('/civantix/guess', methods=['POST'])
-# def guess():
-#     global structured_title, structured_text
-#     data = request.json
-#     guess_word = data.get("word", "").lower()
-#
-#     if not guess_word:
-#         return jsonify({"status": "empty"})
-#
-#     # Vérifie si déjà deviné
-#     all_words = [t for t in structured_title + structured_text if t.get("is_word")]
-#
-#     # Vérifie si dans le texte
-#     in_text = any(t.get("lower") == guess_word for t in all_words)
-#
-#     # Vérifie si dans le lexique du modèle spaCy
-#     in_vocab = nlp.vocab.has_vector(guess_word)
-#
-#     if not in_text and not in_vocab:
-#         return jsonify({"status": "not_found"})
-#
-#     updated = []
-#
-#     def update_tokens(token_list):
-#         nonlocal updated
-#         for i, entry in enumerate(token_list):
-#             if not entry.get("is_word") or entry.get("revealed"):
-#                 continue
-#             score = nlp(entry["lower"]).similarity(nlp(guess_word))
-#             if entry["lower"] == guess_word:
-#                 entry["revealed"] = True
-#                 if entry.get("is_title"):
-#                     entry["guess"] = None
-#             elif score > 0.6:
-#                 entry["guess"] = guess_word
-#                 entry["score"] = score
-#             else:
-#                 continue
-#             updated.append({
-#                 "section": "title" if entry.get("is_title") else "text",
-#                 "index": i,
-#                 "word": entry["word"] if entry["revealed"] else entry["guess"],
-#                 "revealed": entry["revealed"],
-#                 "score": entry.get("score", None)
-#             })
-#
-#     update_tokens(structured_title)
-#     update_tokens(structured_text)
-#
-#     victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
-#     if victory:
-#         for i, token in enumerate(structured_title):
-#             if token.get("is_word") and not token.get("revealed"):
-#                 token["revealed"] = True
-#                 updated.append({
-#                     "section": "title",
-#                     "index": i,
-#                     "word": token["word"],
-#                     "revealed": True
-#                 })
-#         for i, token in enumerate(structured_text):
-#             if token.get("is_word") and not token.get("revealed"):
-#                 token["revealed"] = True
-#                 updated.append({
-#                     "section": "text",
-#                     "index": i,
-#                     "word": token["word"],
-#                     "revealed": True
-#                 })
-#
-#     return jsonify({
-#         "updates": updated,
-#         "victory": victory,
-#         "status": "ok"
-#     })
-#
-#
-# @app.route('/civantix/giveup', methods=['POST'])
-# def give_up():
-#     global structured_title, structured_text
-#     updates = []
-#
-#     def reveal_all(tokens, section):
-#         for i, token in enumerate(tokens):
-#             if token.get("is_word") and not token.get("revealed"):
-#                 token["revealed"] = True
-#                 updates.append({
-#                     "section": section,
-#                     "index": i,
-#                     "word": token["word"],
-#                     "revealed": True,
-#                     "score": None
-#                 })
-#
-#     reveal_all(structured_title, "title")
-#     reveal_all(structured_text, "text")
-#
-#     return jsonify({"updates": updates, "victory": False})
-#
-#
-# @app.route('/civantix/reset')
-# def reset():
-#     global structured_title, structured_text
-#     structured_title, structured_text = init_data()
-#     return redirect(url_for("civantix"))
+
+
+
+
+@app.route('/civantix/guess', methods=['POST'])
+def guess():
+    global structured_title, structured_text
+    data = request.json
+    guess_word = data.get("word", "").lower()
+
+    if not guess_word:
+        return jsonify({"status": "empty"})
+
+    # Vérifie si déjà deviné
+    all_words = [t for t in structured_title + structured_text if t.get("is_word")]
+
+    # Vérifie si dans le texte
+    in_text = any(t.get("lower") == guess_word for t in all_words)
+
+    # Vérifie si dans le lexique du modèle spaCy
+    in_vocab = nlp.vocab.has_vector(guess_word)
+
+    if not in_text and not in_vocab:
+        return jsonify({"status": "not_found"})
+
+    updated = []
+
+    def update_tokens(token_list):
+        nonlocal updated
+        for i, entry in enumerate(token_list):
+            if not entry.get("is_word") or entry.get("revealed"):
+                continue
+            score = nlp(entry["lower"]).similarity(nlp(guess_word))
+            if entry["lower"] == guess_word:
+                entry["revealed"] = True
+                if entry.get("is_title"):
+                    entry["guess"] = None
+            elif score > 0.6:
+                entry["guess"] = guess_word
+                entry["score"] = score
+            else:
+                continue
+            updated.append({
+                "section": "title" if entry.get("is_title") else "text",
+                "index": i,
+                "word": entry["word"] if entry["revealed"] else entry["guess"],
+                "revealed": entry["revealed"],
+                "score": entry.get("score", None)
+            })
+
+    update_tokens(structured_title)
+    update_tokens(structured_text)
+
+    victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
+    if victory:
+        for i, token in enumerate(structured_title):
+            if token.get("is_word") and not token.get("revealed"):
+                token["revealed"] = True
+                updated.append({
+                    "section": "title",
+                    "index": i,
+                    "word": token["word"],
+                    "revealed": True
+                })
+        for i, token in enumerate(structured_text):
+            if token.get("is_word") and not token.get("revealed"):
+                token["revealed"] = True
+                updated.append({
+                    "section": "text",
+                    "index": i,
+                    "word": token["word"],
+                    "revealed": True
+                })
+
+    return jsonify({
+        "updates": updated,
+        "victory": victory,
+        "status": "ok"
+    })
+
+
+@app.route('/civantix/giveup', methods=['POST'])
+def give_up():
+    global structured_title, structured_text
+    updates = []
+
+    def reveal_all(tokens, section):
+        for i, token in enumerate(tokens):
+            if token.get("is_word") and not token.get("revealed"):
+                token["revealed"] = True
+                updates.append({
+                    "section": section,
+                    "index": i,
+                    "word": token["word"],
+                    "revealed": True,
+                    "score": None
+                })
+
+    reveal_all(structured_title, "title")
+    reveal_all(structured_text, "text")
+
+    return jsonify({"updates": updates, "victory": False})
+
+
+@app.route('/civantix/reset')
+def reset():
+    global structured_title, structured_text
+    structured_title, structured_text = init_data()
+    return redirect(url_for("civantix"))
 
 
 if __name__ == '__main__':
