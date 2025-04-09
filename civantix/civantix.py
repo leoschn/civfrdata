@@ -68,7 +68,7 @@ def get_random_source(): #fluk
 TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
 TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
 #url = get_random_source()  # Choisir une URL aléatoire dans sources.txt #fluk
-url = "https://www.civilopedia.net/fr/gathering-storm/wonders/building_biosphere" #fluk
+url = "https://www.civilopedia.net/fr/gathering-storm/wonders/building_machu_picchu" #fluk
 print(url)
 category = CATEGORIES_DICT[url.split("/")[-2]]
     
@@ -77,13 +77,13 @@ def init_data():
     title, text = load_data_from_url(url, TITLE_CLASS, TEXT_CLASS)
 
     # Pour conserver majuscules et ponctuation
-    full_title_tokens = regex.findall(r'\p{L}+|\p{P}+|\s+', title)
-    full_text_tokens = regex.findall(r'\p{L}+|\p{P}+', text)
+    full_title_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', title)
+    full_text_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', text)
 
     def process_tokens(tokens, is_title=False):
         result = []
         for tok in tokens:
-            if regex.match(r'\p{L}+', tok):
+            if regex.match(r'\p{L}+|\p{N}+', tok):
                 result.append({
                     "word": tok,
                     "lower": tok.lower(),
