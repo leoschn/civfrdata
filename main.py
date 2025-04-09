@@ -700,11 +700,11 @@ def init_data():
 
 # Stockage global (réinitialisable)
 structured_title, structured_text = init_data()
-#
-#
-# @app.route('/civantix')
-# def civantix():
-#     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
+
+
+@app.route('/civantix')
+def civantix():
+    return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 #
 #
 # @app.route('/civantix/guess', methods=['POST'])
