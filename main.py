@@ -620,86 +620,86 @@ def db_view():
 
 #
 nlp = spacy.load("fr_core_news_lg")
-#
-# CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
-#                    "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
-#                    "units": "UNITES", "unitpromotions": "PROMOTIONS D'UNITES", "greatpeople": "PERSONNAGES ILLUSTRES",
-#                    "technologies": "TECHNOLOGIES", "civics": "DOGMES", "governments": "GOUVERNEMENTS & DOCTRINES",
-#                    "religions": "RELIGIONS & CROYANCES",
-#                    "features": "TERRAINS, CARACTERISTIQUES & MERVEILLES NATURELLES",
-#                    "resources": "RESSSOURCES", "improvements": "AMENAGEMENTS", "governors": "GOUVERNEURS ET PROMOTIONS"}
-#
-#
-# # ---  Scraping ---
-# def load_data_from_url(url, title_class, text_class):
-#     response = requests.get(url)
-#     if not response.ok:
-#         return "", ""
-#
-#     soup = BeautifulSoup(response.text, "html.parser")
-#     elements = soup.find_all(class_=text_class)
-#     if not elements:
-#         return "", ""
-#
-#     last_element = elements[-1]
-#     full_text = last_element.get_text(separator=" ", strip=True)
-#
-#     # Utiliser spaCy pour diviser le texte en phrases
-#     doc = nlp(full_text)
-#
-#     # Récupérer les 5 premières phrases
-#     sentences = [sent.text for sent in doc.sents][:6]
-#
-#     # Rejoindre les 5 phrases en un seul bloc de texte
-#     limited_text = " ".join(sentences)
-#
-#     title = soup.find_all(class_=title_class)[0].get_text(separator=" ", strip=True)
-#
-#     return title, limited_text
-#
-#
-# TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
-# TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
-# with open('daily_source.txt', 'r') as f:
-#     url = f.readline(-1)
-# print(url)
-# category = CATEGORIES_DICT[url.split("/")[-2]]
-#
-#
-# # 🔁 Données initiales
-# def init_data():
-#     title, text = load_data_from_url(url, TITLE_CLASS, TEXT_CLASS)
-#
-#     # Pour conserver majuscules et ponctuation
-#     full_title_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', title)
-#     full_text_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', text)
-#
-#     def process_tokens(tokens, is_title=False):
-#         result = []
-#         for tok in tokens:
-#             if regex.match(r'\p{L}+|\p{N}+', tok):
-#                 result.append({
-#                     "word": tok,
-#                     "lower": tok.lower(),
-#                     "is_word": True,
-#                     "is_title": is_title,
-#                     "revealed": False,
-#                     "guess": None
-#                 })
-#             else:
-#                 result.append({
-#                     "word": tok,
-#                     "is_word": False
-#                 })
-#         return result
-#
-#     structured_title = process_tokens(full_title_tokens, is_title=True)
-#     structured_text = process_tokens(full_text_tokens, is_title=False)
-#     return structured_title, structured_text
-#
-#
-# # Stockage global (réinitialisable)
-# structured_title, structured_text = init_data()
+
+CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
+                   "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
+                   "units": "UNITES", "unitpromotions": "PROMOTIONS D'UNITES", "greatpeople": "PERSONNAGES ILLUSTRES",
+                   "technologies": "TECHNOLOGIES", "civics": "DOGMES", "governments": "GOUVERNEMENTS & DOCTRINES",
+                   "religions": "RELIGIONS & CROYANCES",
+                   "features": "TERRAINS, CARACTERISTIQUES & MERVEILLES NATURELLES",
+                   "resources": "RESSSOURCES", "improvements": "AMENAGEMENTS", "governors": "GOUVERNEURS ET PROMOTIONS"}
+
+
+# ---  Scraping ---
+def load_data_from_url(url, title_class, text_class):
+    response = requests.get(url)
+    if not response.ok:
+        return "", ""
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    elements = soup.find_all(class_=text_class)
+    if not elements:
+        return "", ""
+
+    last_element = elements[-1]
+    full_text = last_element.get_text(separator=" ", strip=True)
+
+    # Utiliser spaCy pour diviser le texte en phrases
+    doc = nlp(full_text)
+
+    # Récupérer les 5 premières phrases
+    sentences = [sent.text for sent in doc.sents][:6]
+
+    # Rejoindre les 5 phrases en un seul bloc de texte
+    limited_text = " ".join(sentences)
+
+    title = soup.find_all(class_=title_class)[0].get_text(separator=" ", strip=True)
+
+    return title, limited_text
+
+
+TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
+TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
+with open('daily_source.txt', 'r') as f:
+    url = f.readline(-1)
+print(url)
+category = CATEGORIES_DICT[url.split("/")[-2]]
+
+
+# 🔁 Données initiales
+def init_data():
+    title, text = load_data_from_url(url, TITLE_CLASS, TEXT_CLASS)
+
+    # Pour conserver majuscules et ponctuation
+    full_title_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', title)
+    full_text_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', text)
+
+    def process_tokens(tokens, is_title=False):
+        result = []
+        for tok in tokens:
+            if regex.match(r'\p{L}+|\p{N}+', tok):
+                result.append({
+                    "word": tok,
+                    "lower": tok.lower(),
+                    "is_word": True,
+                    "is_title": is_title,
+                    "revealed": False,
+                    "guess": None
+                })
+            else:
+                result.append({
+                    "word": tok,
+                    "is_word": False
+                })
+        return result
+
+    structured_title = process_tokens(full_title_tokens, is_title=True)
+    structured_text = process_tokens(full_text_tokens, is_title=False)
+    return structured_title, structured_text
+
+
+# Stockage global (réinitialisable)
+structured_title, structured_text = init_data()
 #
 #
 # @app.route('/civantix')
