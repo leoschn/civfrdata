@@ -619,7 +619,7 @@ def db_view():
     return render_template('db_view.html', csv_options=csv_options)
 
 #
-# nlp = spacy.load("fr_core_news_lg")
+nlp = spacy.load("fr_core_news_lg")
 #
 # CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
 #                    "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
