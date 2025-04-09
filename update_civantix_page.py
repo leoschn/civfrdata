@@ -22,7 +22,6 @@ def load_sources_from_file(file_path): #fluk
 
 def get_random_source(): #fluk
     sources = load_sources_from_file(base_path+"sources.txt")
-    print(base_path+"sources.txt")
     if sources:
         return random.choice(sources)
     else:
