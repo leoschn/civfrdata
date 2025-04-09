@@ -1,6 +1,8 @@
 import os
 import random
 
+from sympy.multipledispatch.dispatcher import source
+
 script_path = os.path.abspath(__file__)
 path_list = script_path.split(os.sep)
 script_directory = path_list[0:len(path_list)-1]
@@ -21,12 +23,14 @@ def load_sources_from_file(file_path): #fluk
 
 def get_random_source(): #fluk
     sources = load_sources_from_file(base_path+"sources.txt")
+    print(base_path+"sources.txt")
     if sources:
         return random.choice(sources)
     else:
         return None
 
 new_source = get_random_source()
+
 
 with open(base_path+'daily_source.txt','w') as f:
     f.write(new_source)
