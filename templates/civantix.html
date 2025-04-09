@@ -125,7 +125,7 @@
     <div id="input-zone">
         <input id="guess" type="text" placeholder="Entrez un mot">
         <button id="ok-button" style="background-color:#539147; color: white;" onclick="submitGuess()">Valider</button>
-        <button style="background-color:#3477ad; color: white;" onclick="location.href='/reset'">Recommencer</button>
+        <button style="background-color:#3477ad; color: white;" onclick="location.href='/civantix/reset'">Recommencer</button>
         <button id="give-up-button" style="background-color: #a22; color: white;" onclick="giveUp()">Abandonner ?</button>
     </div>
 
@@ -199,7 +199,7 @@ function submitGuess() {
     const feedback = document.getElementById("feedback");
     if (!word) return;
 
-    axios.post("/guess", { word: word })
+    axios.post("/civantix/guess", { word: word })
         .then(res => {
             const { updates, victory, status } = res.data;
 
@@ -263,7 +263,7 @@ function submitGuess() {
     }); 
 
         function giveUp() {
-            axios.post("/giveup")
+            axios.post("/civantix/giveup")
                 .then(res => {
                     const updates = res.data.updates;
 
