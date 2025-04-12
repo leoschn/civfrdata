@@ -689,13 +689,13 @@ def guess():
     updated = []
 
     def update_tokens(token_list,dico_embd, guess_token):
+        with open('log.txt', 'a') as f:
+            f.write(guess_token)
         nonlocal updated
         for i, entry in enumerate(token_list):
             if not entry.get("is_word") or entry.get("revealed"):
                 continue
             score = similarity(dico_embd[entry["lower"]],(guess_token.vector,guess_token.vector_norm))
-            with open('log.txt', 'a') as f:
-                f.write(score)
             if entry["lower"] == guess_word:
                 entry["revealed"] = True
                 if entry.get("is_title"):
@@ -786,5 +786,5 @@ def reset():
     return redirect(url_for("civantix"))
 
 
-if __name__ == '__main__':
-  app.run()
+# if __name__ == '__main__':
+#   app.run()
