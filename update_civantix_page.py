@@ -112,16 +112,16 @@ def init_data(url):
     structured_text_embd = init_token(structured_text)
     structured_title_embd = init_token(structured_title)
 
-    with open("structured_text", 'wb') as f:
+    with open(base_path+"structured_text", 'wb') as f:
         pickle.dump(structured_text, f)
 
-    with open("structured_title", 'wb') as f:
+    with open(base_path+"structured_title", 'wb') as f:
         pickle.dump(structured_title, f)
 
-    with open("structured_text_embd", 'wb') as f:
+    with open(base_path+"structured_text_embd", 'wb') as f:
         pickle.dump(structured_text_embd, f)
 
-    with open("structured_title_embd", 'wb') as f:
+    with open(base_path+"structured_title_embd", 'wb') as f:
         pickle.dump(structured_title_embd, f)
 
 new_source = get_random_source()
