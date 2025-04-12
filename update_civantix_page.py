@@ -13,6 +13,17 @@ base_path =  "/".join(script_directory) + "/"
 
 nlp = spacy.load("fr_core_news_lg")
 
+CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
+                   "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
+                   "units": "UNITES", "unitpromotions": "PROMOTIONS D'UNITES", "greatpeople": "PERSONNAGES ILLUSTRES",
+                   "technologies": "TECHNOLOGIES", "civics": "DOGMES", "governments": "GOUVERNEMENTS & DOCTRINES",
+                   "religions": "RELIGIONS & CROYANCES",
+                   "features": "TERRAINS, CARACTERISTIQUES & MERVEILLES NATURELLES",
+                   "resources": "RESSSOURCES", "improvements": "AMENAGEMENTS", "governors": "GOUVERNEURS ET PROMOTIONS"}
+
+TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
+TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
+
 # Fonction pour charger les URL depuis le fichier
 def load_sources_from_file(file_path): #fluk
     try:
@@ -58,22 +69,7 @@ def get_random_source(): #fluk
     else:
         return None
 
-new_source = get_random_source()
 
-CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
-                   "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
-                   "units": "UNITES", "unitpromotions": "PROMOTIONS D'UNITES", "greatpeople": "PERSONNAGES ILLUSTRES",
-                   "technologies": "TECHNOLOGIES", "civics": "DOGMES", "governments": "GOUVERNEMENTS & DOCTRINES",
-                   "religions": "RELIGIONS & CROYANCES",
-                   "features": "TERRAINS, CARACTERISTIQUES & MERVEILLES NATURELLES",
-                   "resources": "RESSSOURCES", "improvements": "AMENAGEMENTS", "governors": "GOUVERNEURS ET PROMOTIONS"}
-
-TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
-TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
-with open('daily_source.txt', 'r') as f:
-    url = f.readline(-1)
-print(url)
-category = CATEGORIES_DICT[url.split("/")[-2]]
 
 def init_token(token_list):
     dico_embd = {}
@@ -84,7 +80,7 @@ def init_token(token_list):
         dico_embd[token["lower"]] = (emb_d.vector,emb_d.vector_norm)
     return dico_embd
 
-def init_data():
+def init_data(url):
     title, text = load_data_from_url(url, TITLE_CLASS, TEXT_CLASS)
 
     # Pour conserver majuscules et ponctuation
@@ -110,11 +106,8 @@ def init_data():
                 })
         return result
 
-
-
     structured_title = process_tokens(full_title_tokens, is_title=True)
     structured_text = process_tokens(full_text_tokens, is_title=False)
-
 
     structured_text_embd = init_token(structured_text)
     structured_title_embd = init_token(structured_title)
@@ -124,17 +117,22 @@ def init_data():
     with open("structured_title",'wb') as f :
         pickle.dump(structured_title,f)
 
-
-
     with open("structured_text_embd", 'wb') as f:
         pickle.dump(structured_text_embd, f)
     with open("structured_title_embd", 'wb') as f:
         pickle.dump(structured_title_embd, f)
 
-
-
-# Stockage global (réinitialisable)
-init_data()
+new_source = get_random_source()
 
 with open(base_path+'daily_source.txt','w') as f:
     f.write(new_source)
+
+with open('daily_source.txt', 'r') as f:
+    url = f.readline(-1)
+
+# Stockage global (réinitialisable)
+init_data(url)
+
+
+
+

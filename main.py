@@ -642,7 +642,6 @@ category = CATEGORIES_DICT[url.split("/")[-2]]
 
 def similarity(embd_1,embd_2):
     sim = np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1])
-    print(sim)
     return sim
 
 # 🔁 Données initiales
@@ -668,7 +667,6 @@ def civantix():
 
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
-    start = time.time()
     global structured_title, structured_text
     data = request.json
     guess_word = data.get("word", "").lower()
@@ -738,7 +736,6 @@ def guess():
                     "revealed": True
                 })
 
-    print(time.time()-start)
 
     return jsonify({
         "updates": updated,
