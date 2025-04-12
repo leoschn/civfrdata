@@ -129,7 +129,7 @@ new_source = get_random_source()
 with open(base_path+'daily_source.txt', 'w') as f:
     f.write(new_source)
 
-with open('daily_source.txt', 'r') as f:
+with open(base_path+'daily_source.txt', 'r') as f:
     url = f.readline(-1)
 
 # Stockage global (réinitialisable)

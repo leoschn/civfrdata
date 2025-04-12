@@ -406,7 +406,3 @@ https://www.civilopedia.net/fr/gathering-storm/units/unit_military_engineer
 https://www.civilopedia.net/fr/gathering-storm/units/unit_mobile_sam
 https://www.civilopedia.net/fr/gathering-storm/units/unit_medic
 https://www.civilopedia.net/fr/gathering-storm/units/unit_siege_tower
-
-
-
-
