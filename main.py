@@ -3,7 +3,10 @@ import io
 import sqlite3
 from collections import defaultdict
 from datetime import datetime
+import time
+import pickle
 
+import numpy as np
 import regex
 import requests
 import spacy
@@ -631,75 +634,29 @@ CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIR
 
 
 # ---  Scraping ---
-def load_data_from_url(url, title_class, text_class):
-    response = requests.get(url)
-    if not response.ok:
-        return "", ""
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    elements = soup.find_all(class_=text_class)
-    if not elements:
-        return "", ""
-
-    last_element = elements[-1]
-    full_text = last_element.get_text(separator=" ", strip=True)
-
-    # Utiliser spaCy pour diviser le texte en phrases
-    doc = nlp(full_text)
-
-    # Récupérer les 5 premières phrases
-    sentences = [sent.text for sent in doc.sents][:6]
-
-    # Rejoindre les 5 phrases en un seul bloc de texte
-    limited_text = " ".join(sentences)
-
-    title = soup.find_all(class_=title_class)[0].get_text(separator=" ", strip=True)
-
-    return title, limited_text
-
-
-TITLE_CLASS = "App_pageHeaderText__SsfWm App_mainTextColor__6NGqD App_mainTextColor__6NGqD"
-TEXT_CLASS = "Component_paragraphs__tSvTZ App_mainTextColor__6NGqD"
 with open('daily_source.txt', 'r') as f:
     url = f.readline(-1)
 print(url)
 category = CATEGORIES_DICT[url.split("/")[-2]]
 
 
+def similarity(embd_1,embd_2):
+    sim = np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1])
+    print(sim)
+    return sim
+
 # 🔁 Données initiales
-def init_data():
-    title, text = load_data_from_url(url, TITLE_CLASS, TEXT_CLASS)
+with open("structured_text", "rb") as fp:   # Unpickling
+    structured_text = pickle.load(fp)
 
-    # Pour conserver majuscules et ponctuation
-    full_title_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', title)
-    full_text_tokens = regex.findall(r'\p{L}+|\p{P}+|\p{N}+', text)
+with open("structured_title", "rb") as fp:   # Unpickling
+    structured_title = pickle.load(fp)
 
-    def process_tokens(tokens, is_title=False):
-        result = []
-        for tok in tokens:
-            if regex.match(r'\p{L}+|\p{N}+', tok):
-                result.append({
-                    "word": tok,
-                    "lower": tok.lower(),
-                    "is_word": True,
-                    "is_title": is_title,
-                    "revealed": False,
-                    "guess": None
-                })
-            else:
-                result.append({
-                    "word": tok,
-                    "is_word": False
-                })
-        return result
+with open("structured_text_embd", "rb") as fp:  # Unpickling
+    structured_text_embd = pickle.load(fp)
 
-    structured_title = process_tokens(full_title_tokens, is_title=True)
-    structured_text = process_tokens(full_text_tokens, is_title=False)
-    return structured_title, structured_text
-
-
-# Stockage global (réinitialisable)
-structured_title, structured_text = init_data()
+with open("structured_title_embd", "rb") as fp:  # Unpickling
+    structured_title_embd = pickle.load(fp)
 
 
 @app.route('/civantix')
@@ -711,6 +668,7 @@ def civantix():
 
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
+    start = time.time()
     global structured_title, structured_text
     data = request.json
     guess_word = data.get("word", "").lower()
@@ -732,12 +690,12 @@ def guess():
 
     updated = []
 
-    def update_tokens(token_list):
+    def update_tokens(token_list,dico_embd, guess_token):
         nonlocal updated
         for i, entry in enumerate(token_list):
             if not entry.get("is_word") or entry.get("revealed"):
                 continue
-            score = nlp(entry["lower"]).similarity(nlp(guess_word))
+            score = similarity(dico_embd[entry["lower"]],(guess_token.vector,guess_token.vector_norm))
             if entry["lower"] == guess_word:
                 entry["revealed"] = True
                 if entry.get("is_title"):
@@ -755,8 +713,9 @@ def guess():
                 "score": entry.get("score", None)
             })
 
-    update_tokens(structured_title)
-    update_tokens(structured_text)
+    guess_token = nlp(guess_word)
+    update_tokens(structured_title, structured_title_embd, guess_token)
+    update_tokens(structured_text, structured_text_embd, guess_token)
 
     victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
     if victory:
@@ -778,6 +737,8 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
+
+    print(time.time()-start)
 
     return jsonify({
         "updates": updated,
@@ -811,8 +772,18 @@ def give_up():
 
 @app.route('/civantix/reset')
 def reset():
-    global structured_title, structured_text
-    structured_title, structured_text = init_data()
+    global structured_title, structured_text, structured_text_embd, structured_title_embd
+    with open("structured_text", "rb") as fp:  # Unpickling
+        structured_text = pickle.load(fp)
+
+    with open("structured_title", "rb") as fp:  # Unpickling
+        structured_title = pickle.load(fp)
+
+    with open("structured_text_embd", "rb") as fp:  # Unpickling
+        structured_text_embd = pickle.load(fp)
+
+    with open("structured_title_embd", "rb") as fp:  # Unpickling
+        structured_title_embd = pickle.load(fp)
     return redirect(url_for("civantix"))
 
 
