@@ -745,8 +745,12 @@ def guess():
                     "revealed": True
                 })
     with open('log_update.txt', 'a') as f:
+        f.write('Update\n')
         f.write(updated.__repr__())
         f.write('\n')
+        f.write('victory\n')
+        f.write(victory.__repr__())
+
 
 
     return jsonify({
