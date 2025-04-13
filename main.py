@@ -641,7 +641,7 @@ category = CATEGORIES_DICT[url.split("/")[-2]]
 
 
 def similarity(embd_1,embd_2):
-    sim = np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1])
+    sim = np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1] + 10e-7)
     return sim
 
 # 🔁 Données initiales
@@ -660,62 +660,66 @@ with open("structured_title_embd", "rb") as fp:  # Unpickling
 
 @app.route('/civantix')
 def civantix():
+    print('civantix')
     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 
 
-
+def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
+    with open('log.txt', 'a') as f:
+        f.write(guess_token.__repr__())
+        f.write('\n')
+    for i, entry in enumerate(token_list):
+        if not entry.get("is_word") or entry.get("revealed"):
+            continue
+        score = similarity(dico_embd[entry["lower"]],(guess_token.vector,guess_token.vector_norm))
+        if entry["lower"] == guess_word:
+            entry["revealed"] = True
+            entry["score"] = None
+            if entry.get("is_title"):
+                entry["guess"] = None
+        elif score > 0.6:
+            entry["guess"] = guess_word
+            entry["score"] = score
+        else:
+            continue
+        update.append({
+            "section": "title" if entry.get("is_title") else "text",
+            "index": i,
+            "word": entry["word"] if entry["revealed"] else entry["guess"],
+            "revealed": entry["revealed"],
+            "score": entry.get("score", None)
+        })
+    return update
 
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
+    print('guess')
     global structured_title, structured_text
     data = request.json
-    guess_word = data.get("word", "").lower()
+    current_guess_word = data.get("word", "").lower()
 
-    if not guess_word:
+    if not current_guess_word:
         return jsonify({"status": "empty"})
 
     # Vérifie si déjà deviné
     all_words = [t for t in structured_title + structured_text if t.get("is_word")]
 
     # Vérifie si dans le texte
-    in_text = any(t.get("lower") == guess_word for t in all_words)
+    in_text = any(t.get("lower") == current_guess_word for t in all_words)
 
     # Vérifie si dans le lexique du modèle spaCy
-    in_vocab = nlp.vocab.has_vector(guess_word)
+    in_vocab = nlp.vocab.has_vector(current_guess_word)
 
     if not in_text and not in_vocab:
         return jsonify({"status": "not_found"})
 
     updated = []
 
-    def update_tokens(token_list,dico_embd, guess_token):
-        with open('log.txt', 'a') as f:
-            f.write(guess_token)
-        nonlocal updated
-        for i, entry in enumerate(token_list):
-            if not entry.get("is_word") or entry.get("revealed"):
-                continue
-            score = similarity(dico_embd[entry["lower"]],(guess_token.vector,guess_token.vector_norm))
-            if entry["lower"] == guess_word:
-                entry["revealed"] = True
-                if entry.get("is_title"):
-                    entry["guess"] = None
-            elif score > 0.6:
-                entry["guess"] = guess_word
-                entry["score"] = score
-            else:
-                continue
-            updated.append({
-                "section": "title" if entry.get("is_title") else "text",
-                "index": i,
-                "word": entry["word"] if entry["revealed"] else entry["guess"],
-                "revealed": entry["revealed"],
-                "score": entry.get("score", None)
-            })
 
-    guess_token = nlp(guess_word)
-    update_tokens(structured_title, structured_title_embd, guess_token)
-    update_tokens(structured_text, structured_text_embd, guess_token)
+
+    current_guess_token = nlp(current_guess_word)
+    updated = update_tokens(structured_title, structured_title_embd, current_guess_token, current_guess_word, updated)
+    updated = update_tokens(structured_text, structured_text_embd, current_guess_token, current_guess_word, updated)
 
     victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
     if victory:
@@ -737,6 +741,7 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
+    print(updated)
 
 
     return jsonify({
@@ -748,6 +753,7 @@ def guess():
 
 @app.route('/civantix/giveup', methods=['POST'])
 def give_up():
+    print('give_up')
     global structured_title, structured_text
     updates = []
 
@@ -771,6 +777,7 @@ def give_up():
 
 @app.route('/civantix/reset')
 def reset():
+    print('reset')
     global structured_title, structured_text, structured_text_embd, structured_title_embd
     with open("structured_text", "rb") as fp:  # Unpickling
         structured_text = pickle.load(fp)
