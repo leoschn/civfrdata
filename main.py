@@ -744,7 +744,9 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
-    print(updated)
+    with open('log_data.txt', 'a') as f:
+        f.write(updated.__repr__())
+        f.write('\n')
 
 
     return jsonify({
