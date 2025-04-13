@@ -650,6 +650,8 @@ with open("structured_text_embd", "rb") as fp:  # Unpickling
 
 with open("structured_title_embd", "rb") as fp:  # Unpickling
     structured_title_embd = pickle.load(fp)
+
+
 nlp = None
 @app.route('/civantix')
 def civantix():
@@ -687,7 +689,9 @@ def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
     print('guess')
-    global structured_title, structured_text
+    global structured_title, structured_text, nlp
+    if nlp is None:
+        nlp = spacy.load("fr_core_news_lg")
     data = request.json
 
     current_guess_word = data.get("word", "").lower()
