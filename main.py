@@ -665,9 +665,6 @@ def civantix():
 
 
 def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
-    with open('log_update.txt', 'a') as f:
-        f.write(guess_token.__repr__())
-        f.write('\n')
     for i, entry in enumerate(token_list):
         if not entry.get("is_word") or entry.get("revealed"):
             continue
@@ -744,7 +741,7 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
-    with open('log_data.txt', 'a') as f:
+    with open('log_update.txt', 'a') as f:
         f.write(updated.__repr__())
         f.write('\n')
 
