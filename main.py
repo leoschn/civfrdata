@@ -693,9 +693,7 @@ def guess():
     print('guess')
     global structured_title, structured_text
     data = request.json
-    with open('log_data.txt', 'a') as f:
-        f.write(data.__repr__())
-        f.write('\n')
+
     current_guess_word = data.get("word", "").lower()
 
     if not current_guess_word:
@@ -741,9 +739,6 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
-    with open('log_update.txt', 'a') as f:
-        f.write(updated.__repr__())
-        f.write('\n')
 
 
     return jsonify({
@@ -794,21 +789,9 @@ def reset():
     with open("structured_title_embd", "rb") as fp:  # Unpickling
         structured_title_embd = pickle.load(fp)
 
-    t = time.time() - start
-    with open('log_exec_time.txt', 'a') as f:
-        f.write('Reset time :\n')
-        f.write(t.__repr__())
-        f.write('\n')
 
     return redirect(url_for("civantix"))
 
-@app.route('/civantix/log_error', methods=['POST'])
-def log_error():
-    log = request.json
-
-    with open('log_error.txt', 'a') as f:
-        f.write(log.message.__repr__())
-        f.write('\n')
 
 
 # if __name__ == '__main__':

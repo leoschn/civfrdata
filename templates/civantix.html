@@ -245,17 +245,6 @@
         document.getElementById("guess").value = "";
     })
     .catch(err => {
-        const errorMessage = "Erreur lors de la requête.";
-
-        const logEntry = {
-            message: errorMessage,
-            error: err.response.data.toString(),
-            time: new Date().toISOString()
-        };
-
-        axios.post("/civantix/log_error", logEntry)
-        .catch(e => console.error("Erreur lors de l'envoi du log au serveur :", e));
-
         feedback.innerText = "Erreur lors de la requête.";
         console.error(err);
     });
