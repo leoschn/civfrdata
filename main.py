@@ -665,7 +665,7 @@ def civantix():
 
 
 def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
-    with open('log.txt', 'a') as f:
+    with open('log_update.txt', 'a') as f:
         f.write(guess_token.__repr__())
         f.write('\n')
     for i, entry in enumerate(token_list):
@@ -696,6 +696,9 @@ def guess():
     print('guess')
     global structured_title, structured_text
     data = request.json
+    with open('log_data.txt', 'a') as f:
+        f.write(data.__repr__())
+        f.write('\n')
     current_guess_word = data.get("word", "").lower()
 
     if not current_guess_word:
