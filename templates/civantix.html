@@ -249,7 +249,7 @@
 
         const logEntry = {
             message: errorMessage,
-            error: (err?.message || err?.toString() || "Erreur inconnue"),
+            error: err.response.data.toString(),
             time: new Date().toISOString()
         };
 
@@ -257,7 +257,7 @@
         .catch(e => console.error("Erreur lors de l'envoi du log au serveur :", e));
 
         feedback.innerText = "Erreur lors de la requête.";
-        console.error(err);
+        console.error(err.response.data);
     });
 }
 
