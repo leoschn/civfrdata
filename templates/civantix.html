@@ -248,10 +248,9 @@
 
 
         const logEntry = {
-            message: errorMessage,
-            error: err.toString(),
-            time: new Date().toISOString()
+            message: "Erreur lors de l'envoi du log au serveur :"
         };
+
         axios.post("/civantix/log_error", logEntry)
         .catch(e => console.error("Erreur lors de l'envoi du log au serveur :", e));
 
