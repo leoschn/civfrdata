@@ -120,183 +120,207 @@
 </head>
 <body>
 
-    <h1>Civantix</h1>
+<h1>Civantix</h1>
 
-    <div id="input-zone">
-        <input id="guess" type="text" placeholder="Entrez un mot">
-        <button id="ok-button" style="background-color:#539147; color: white;" onclick="submitGuess()">Valider</button>
-        <button style="background-color:#3477ad; color: white;" onclick="location.href='/civantix/reset'">Recommencer</button>
-        <button id="give-up-button" style="background-color: #a22; color: white;" onclick="giveUp()">Abandonner ?</button>
-    </div>
+<div id="input-zone">
+    <input id="guess" type="text" placeholder="Entrez un mot">
+    <button id="ok-button" style="background-color:#539147; color: white;" onclick="submitGuess()">Valider</button>
+    <button style="background-color:#3477ad; color: white;" onclick="location.href='/civantix/reset'">Recommencer</button>
+    <button id="give-up-button" style="background-color: #a22; color: white;" onclick="giveUp()">Abandonner ?</button>
+</div>
 
-    <div id="feedback" style="margin-top: 1rem; color: #ff6666; font-weight: bold;"></div>
+<div id="feedback" style="margin-top: 1rem; color: #ff6666; font-weight: bold;"></div>
 
-    <div id="container">
-        <button id="revealButton" onclick="revealClue()">Double clic pour révéler la catégorie</button>
-        <div id="clue">{{ clue }}</div>
-    </div>
+<div id="container">
+    <button id="revealButton" onclick="revealClue()">Double clic pour révéler la catégorie</button>
+    <div id="clue">{{ clue }}</div>
+</div>
 
-    <div id="victory-message" class="victory" style="display: none;">
-        🎉 Félicitations !
-    </div>
-    
-    <div class="section" id="title">
-        {% for token in title %}
-            {% if token.is_word %}
-                {% if not token.revealed %}
-                    <span class="word-box" id="title-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
+<div id="victory-message" class="victory" style="display: none;">
+    🎉 Félicitations !
+</div>
+
+<div class="section" id="title">
+    {% for token in title %}
+    {% if token.is_word %}
+    {% if not token.revealed %}
+    <span class="word-box" id="title-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
                         &nbsp;
                     </span>
-                {% else %}
-                    <span class="guessed">{{ token.word }}</span>
-                {% endif %}
-            {% else %}
-                <span class="punct">{{ token.word }}</span>
-            {% endif %}
-        {% endfor %}
-    </div>
+    {% else %}
+    <span class="guessed">{{ token.word }}</span>
+    {% endif %}
+    {% else %}
+    <span class="punct">{{ token.word }}</span>
+    {% endif %}
+    {% endfor %}
+</div>
 
-    <div class="section" id="text">
-        {% for token in text %}
-            {% if token.is_word %}
-                    {% if not token.revealed %}
-                        <span class="word-box" id="text-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
+<div class="section" id="text">
+    {% for token in text %}
+    {% if token.is_word %}
+    {% if not token.revealed %}
+    <span class="word-box" id="text-{{ loop.index0 }}" data-length="{{ token.word|length }}" style="width: {{ token.word|length }}ch;">
                             &nbsp;
                         </span>
-                    {% else %}
-                        <span class="guessed">{{ token.word }}</span>
-                    {% endif %}
-            {% else %}
-                <span class="punct">{{ token.word }}</span>
-            {% endif %}
-        {% endfor %}
-    </div>
+    {% else %}
+    <span class="guessed">{{ token.word }}</span>
+    {% endif %}
+    {% else %}
+    <span class="punct">{{ token.word }}</span>
+    {% endif %}
+    {% endfor %}
+</div>
 
-    <div style="margin-top: 10px; margin-bottom:10px;">Essais : <span id="attempts">0</span></div>
+<div style="margin-top: 10px; margin-bottom:10px;">Essais : <span id="attempts">0</span></div>
 
-    <div class="history" id="history">
-        <ul id="history-list"></ul>
-    </div>
+<div class="history" id="history">
+    <ul id="history-list"></ul>
+</div>
 
-    <script>
-        function revealClue() {
-        document.getElementById("revealButton").addEventListener("click", function() {
-            this.style.display = "none";
-            document.getElementById("clue").style.display = "block";
-        });
-        }
+<button onclick="downloadErrorLog()">Télécharger le journal des erreurs</button>
 
-        function viridis(score) {
-            const t = (score - 0.6) / 0.05;
-            const c = Math.max(0, Math.min(1, t));
-            const hue = c * 118;
-            return `hsl(${hue}, 50%, 25%)`;
-        }
-        let attempts = 0;
+<script>
+    function revealClue() {
+    document.getElementById("revealButton").addEventListener("click", function() {
+        this.style.display = "none";
+        document.getElementById("clue").style.display = "block";
+    });
+    }
 
-function submitGuess() {
-    const word = document.getElementById("guess").value.trim().toLowerCase();
-    const feedback = document.getElementById("feedback");
-    const errorLog = [];
-    if (!word) return;
+    function viridis(score) {
+        const t = (score - 0.6) / 0.05;
+        const c = Math.max(0, Math.min(1, t));
+        const hue = c * 118;
+        return `hsl(${hue}, 50%, 25%)`;
+    }
 
-    axios.post("/civantix/guess", { word: word })
-        .then(res => {
-            const { updates, victory, status } = res.data;
+    let attempts = 0;
 
-            if (status === "not_found") {
-                feedback.innerText = `« ${word} » n'est pas reconnu.`;
-                return;
-            }
+    function submitGuess() {
+        const word = document.getElementById("guess").value.trim().toLowerCase();
+        const feedback = document.getElementById("feedback");
+        const errorLog = [];
+        if (!word) return;
 
-            // Si on arrive ici, le mot est valide
-            feedback.innerText = ""; // On efface le message précédent
-            attempts += 1;
-            document.getElementById("attempts").innerText = attempts;
+        axios.post("/civantix/guess", { word: word })
+            .then(res => {
+                const { updates, victory, status } = res.data;
 
-            // Historique
-            const hist = document.getElementById("history-list");
-            const li = document.createElement("li");
-            li.innerText = word;
-            hist.prepend(li);
+                if (status === "not_found") {
+                    feedback.innerText = `« ${word} » n'est pas reconnu.`;
+                    return;
+                }
 
-            // Mots révélés ou colorés
-            updates.forEach(update => {
-                const id = `${update.section}-${update.index}`;
-                const el = document.getElementById(id);
-                if (!el) return;
+                // Si on arrive ici, le mot est valide
+                feedback.innerText = ""; // On efface le message précédent
+                attempts += 1;
+                document.getElementById("attempts").innerText = attempts;
 
-                el.innerText = update.word;
-                el.style.backgroundColor = update.revealed ? "#121212" : viridis(update.score);
-            });
+                // Historique
+                const hist = document.getElementById("history-list");
+                const li = document.createElement("li");
+                li.innerText = word;
+                hist.prepend(li);
 
-            // Victoire ?
-            if (victory) {
-                document.getElementById("victory-message").style.display = "block";
+                // Mots révélés ou colorés
                 updates.forEach(update => {
                     const id = `${update.section}-${update.index}`;
                     const el = document.getElementById(id);
+                    if (!el) return;
+
                     el.innerText = update.word;
-                    el.style.backgroundColor = "#121212";
+                    el.style.backgroundColor = update.revealed ? "#121212" : viridis(update.score);
                 });
-            }
 
-            document.getElementById("guess").value = "";
-        })
-        .catch(err => {
-            feedback.innerText = "Erreur lors de la requête.";
-
-            const logEntry = {
-                message: errorMessage,
-                error: err.toString(),
-                time: new Date().toISOString()
-            };
-            errorLog.push(logEntry);
-
-            const errorLogList = document.getElementById("error-log-list");
-            if (errorLogList) {
-                const li = document.createElement("li");
-                li.innerText = `[${logEntry.time}] ${logEntry.error}`;
-                errorLogList.prepend(li);
-            }
-
-            console.error(err);
-        });
-}
-
-        var input = document.getElementById("guess");
-        // Execute a function when the user presses a key on the keyboard
-        input.addEventListener("keypress", function(event) {
-        // If the user presses the "Enter" key on the keyboard
-        if (event.key === "Enter") {
-            // Cancel the default action, if needed
-            event.preventDefault();
-            // Trigger the button element with a click
-            document.getElementById("ok-button").click();
-        }
-
-
-    }); 
-
-        function giveUp() {
-            axios.post("/civantix/giveup")
-                .then(res => {
-                    const updates = res.data.updates;
-
+                // Victoire ?
+                if (victory) {
+                    document.getElementById("victory-message").style.display = "block";
                     updates.forEach(update => {
                         const id = `${update.section}-${update.index}`;
                         const el = document.getElementById(id);
-                        if (el) {
-                            el.innerText = update.word;
-                            el.style.backgroundColor = "#121212";
-                        }
+                        el.innerText = update.word;
+                        el.style.backgroundColor = "#121212";
                     });
-
-                    // Masquer le bouton d'abandon une fois cliqué (optionnel)
-                    document.getElementById("give-up-button").style.display = "none";
-                });
         }
 
-    </script>
+        document.getElementById("guess").value = "";
+    })
+    .catch(err => {
+        feedback.innerText = "Erreur lors de la requête.";
+
+        const logEntry = {
+            message: errorMessage,
+            error: err.toString(),
+            time: new Date().toISOString()
+        };
+        errorLog.push(logEntry);
+
+        const errorLogList = document.getElementById("error-log-list");
+        if (errorLogList) {
+            const li = document.createElement("li");
+            li.innerText = `[${logEntry.time}] ${logEntry.error}`;
+            errorLogList.prepend(li);
+        }
+
+        console.error(err);
+    });
+}
+
+    var input = document.getElementById("guess");
+    // Execute a function when the user presses a key on the keyboard
+    input.addEventListener("keypress", function(event) {
+    // If the user presses the "Enter" key on the keyboard
+    if (event.key === "Enter") {
+        // Cancel the default action, if needed
+        event.preventDefault();
+        // Trigger the button element with a click
+        document.getElementById("ok-button").click();
+    }
+
+
+});
+
+    function giveUp() {
+        axios.post("/civantix/giveup")
+            .then(res => {
+                const updates = res.data.updates;
+
+                updates.forEach(update => {
+                    const id = `${update.section}-${update.index}`;
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = update.word;
+                        el.style.backgroundColor = "#121212";
+                    }
+                });
+
+                // Masquer le bouton d'abandon une fois cliqué (optionnel)
+                document.getElementById("give-up-button").style.display = "none";
+            });
+    }
+
+    function downloadErrorLog() {
+        if (errorLog.length === 0) {
+            alert("Aucune erreur à télécharger.");
+            return;
+        }
+
+        const logText = errorLog.map(entry => {
+            return `[${entry.time}] ${entry.error}`;
+        }).join('\n');
+
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "error-log.txt";
+        a.click();
+
+        URL.revokeObjectURL(url); // Clean up
+    }
+
+</script>
 </body>
 </html>
