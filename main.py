@@ -1,16 +1,12 @@
+import time
 import csv
 import io
 import sqlite3
 from collections import defaultdict
 from datetime import datetime
-import time
 import pickle
-
 import numpy as np
-import regex
-import requests
 import spacy
-from bs4 import BeautifulSoup
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask import Response
 from werkzeug.exceptions import abort
@@ -621,8 +617,6 @@ def db_view():
     }
     return render_template('db_view.html', csv_options=csv_options)
 
-#
-nlp = spacy.load("fr_core_news_lg")
 
 CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIRIGEANTS", "citystates": "CITES ETATS",
                    "districts": "QUARTIERS", "buildings": "BATIMENTS", "wonders": "MERVEILLES & PROJETS",
@@ -656,10 +650,12 @@ with open("structured_text_embd", "rb") as fp:  # Unpickling
 
 with open("structured_title_embd", "rb") as fp:  # Unpickling
     structured_title_embd = pickle.load(fp)
-
-
+nlp = None
 @app.route('/civantix')
 def civantix():
+    global nlp
+    if nlp is None:
+        nlp = spacy.load("fr_core_news_lg")
     print('civantix')
     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 
