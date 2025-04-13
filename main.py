@@ -642,7 +642,7 @@ category = CATEGORIES_DICT[url.split("/")[-2]]
 
 
 def similarity(embd_1,embd_2):
-    sim = np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1] + 10e-7)
+    sim = float(np.dot(embd_1[0], embd_2[0]) / (embd_1[1] * embd_2[1] + 10e-7))
     return sim
 
 # 🔁 Données initiales
@@ -750,6 +750,7 @@ def guess():
         f.write('\n')
         f.write('victory\n')
         f.write(victory.__repr__())
+        f.write('victory\n')
 
 
 
