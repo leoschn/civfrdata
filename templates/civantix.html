@@ -257,7 +257,7 @@
         .catch(e => console.error("Erreur lors de l'envoi du log au serveur :", e));
 
         feedback.innerText = "Erreur lors de la requête.";
-        console.error(err.response.data);
+        console.error(err);
     });
 }
 
