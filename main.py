@@ -799,7 +799,7 @@ def log_error():
     log = request.json
 
     with open('log_error.txt', 'a') as f:
-        f.write(log.message.__repr__())
+        f.write(log.__repr__())
         f.write('\n')
 
 
