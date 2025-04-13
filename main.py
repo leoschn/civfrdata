@@ -11,12 +11,11 @@ import regex
 import requests
 import spacy
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask import Response
 from werkzeug.exceptions import abort
 # Listes modifiées avec le joli nom (display name)
 from werkzeug.utils import redirect
-
 
 list_civ_url = [
     ("abraham lincoln", 'Abraham_Lincoln_29.webp', "Abraham Lincoln"),
@@ -646,26 +645,23 @@ def similarity(embd_1,embd_2):
     return sim
 
 # 🔁 Données initiales
-def load_structured_data():
-    with open("structured_text", "rb") as fp:
-        structured_text = pickle.load(fp)
-    with open("structured_title", "rb") as fp:
-        structured_title = pickle.load(fp)
-    with open("structured_text_embd", "rb") as fp:
-        structured_text_embd = pickle.load(fp)
-    with open("structured_title_embd", "rb") as fp:
-        structured_title_embd = pickle.load(fp)
-    return structured_title, structured_text, structured_title_embd, structured_text_embd
+with open("structured_text", "rb") as fp:   # Unpickling
+    structured_text = pickle.load(fp)
 
+with open("structured_title", "rb") as fp:   # Unpickling
+    structured_title = pickle.load(fp)
 
-@app.before_request
-def before_request():
-    g.structured_title, g.structured_text, g.structured_title_embd, g.structured_text_embd = load_structured_data()
+with open("structured_text_embd", "rb") as fp:  # Unpickling
+    structured_text_embd = pickle.load(fp)
+
+with open("structured_title_embd", "rb") as fp:  # Unpickling
+    structured_title_embd = pickle.load(fp)
+
 
 @app.route('/civantix')
 def civantix():
     print('civantix')
-    return render_template("civantix.html", title=g.structured_title, text=g.structured_text, clue=category)
+    return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 
 
 def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
@@ -695,6 +691,7 @@ def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
     print('guess')
+    global structured_title, structured_text
     data = request.json
     with open('log_data.txt', 'a') as f:
         f.write(data.__repr__())
@@ -705,7 +702,7 @@ def guess():
         return jsonify({"status": "empty"})
 
     # Vérifie si déjà deviné
-    all_words = [t for t in g.structured_title + g.structured_text if t.get("is_word")]
+    all_words = [t for t in structured_title + structured_text if t.get("is_word")]
 
     # Vérifie si dans le texte
     in_text = any(t.get("lower") == current_guess_word for t in all_words)
@@ -721,12 +718,12 @@ def guess():
 
 
     current_guess_token = nlp(current_guess_word)
-    updated = update_tokens(g.structured_title, g.structured_title_embd, current_guess_token, current_guess_word, updated)
-    updated = update_tokens(g.structured_text, g.structured_text_embd, current_guess_token, current_guess_word, updated)
+    updated = update_tokens(structured_title, structured_title_embd, current_guess_token, current_guess_word, updated)
+    updated = update_tokens(structured_text, structured_text_embd, current_guess_token, current_guess_word, updated)
 
-    victory = all(tok.get("revealed") for tok in g.structured_title if tok.get("is_word"))
+    victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
     if victory:
-        for i, token in enumerate(g.structured_title):
+        for i, token in enumerate(structured_title):
             if token.get("is_word") and not token.get("revealed"):
                 token["revealed"] = True
                 updated.append({
@@ -735,7 +732,7 @@ def guess():
                     "word": token["word"],
                     "revealed": True
                 })
-        for i, token in enumerate(g.structured_text):
+        for i, token in enumerate(structured_text):
             if token.get("is_word") and not token.get("revealed"):
                 token["revealed"] = True
                 updated.append({
@@ -745,13 +742,8 @@ def guess():
                     "revealed": True
                 })
     with open('log_update.txt', 'a') as f:
-        f.write('Update\n')
         f.write(updated.__repr__())
         f.write('\n')
-        f.write('victory\n')
-        f.write(victory.__repr__())
-        f.write('victory\n')
-
 
 
     return jsonify({
@@ -764,6 +756,7 @@ def guess():
 @app.route('/civantix/giveup', methods=['POST'])
 def give_up():
     print('give_up')
+    global structured_title, structured_text
     updates = []
 
     def reveal_all(tokens, section):
@@ -778,8 +771,8 @@ def give_up():
                     "score": None
                 })
 
-    reveal_all(g.structured_title, "title")
-    reveal_all(g.structured_text, "text")
+    reveal_all(structured_title, "title")
+    reveal_all(structured_text, "text")
 
     return jsonify({"updates": updates, "victory": False})
 
@@ -787,7 +780,18 @@ def give_up():
 @app.route('/civantix/reset')
 def reset():
     print('reset')
-    g.structured_title, g.structured_text, g.structured_title_embd, g.structured_text_embd = load_structured_data()
+    global structured_title, structured_text, structured_text_embd, structured_title_embd
+    with open("structured_text", "rb") as fp:  # Unpickling
+        structured_text = pickle.load(fp)
+
+    with open("structured_title", "rb") as fp:  # Unpickling
+        structured_title = pickle.load(fp)
+
+    with open("structured_text_embd", "rb") as fp:  # Unpickling
+        structured_text_embd = pickle.load(fp)
+
+    with open("structured_title_embd", "rb") as fp:  # Unpickling
+        structured_title_embd = pickle.load(fp)
     return redirect(url_for("civantix"))
 
 @app.route('/civantix/log_error', methods=['POST'])
@@ -795,7 +799,7 @@ def log_error():
     log = request.json
 
     with open('log_error.txt', 'a') as f:
-        f.write(log.__repr__())
+        f.write(log.message.__repr__())
         f.write('\n')
 
 
