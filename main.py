@@ -780,6 +780,7 @@ def give_up():
 @app.route('/civantix/reset')
 def reset():
     print('reset')
+    start = time.time()
     global structured_title, structured_text, structured_text_embd, structured_title_embd
     with open("structured_text", "rb") as fp:  # Unpickling
         structured_text = pickle.load(fp)
@@ -792,6 +793,13 @@ def reset():
 
     with open("structured_title_embd", "rb") as fp:  # Unpickling
         structured_title_embd = pickle.load(fp)
+
+    t = time.time() - start
+    with open('log_exec_time.txt', 'a') as f:
+        f.write('Reset time :\n')
+        f.write(t.__repr__())
+        f.write('\n')
+
     return redirect(url_for("civantix"))
 
 @app.route('/civantix/log_error', methods=['POST'])
