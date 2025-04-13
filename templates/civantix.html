@@ -178,8 +178,6 @@
     <ul id="history-list"></ul>
 </div>
 
-<button onclick="downloadErrorLog()">Télécharger le journal des erreurs</button>
-
 <script>
     function revealClue() {
     document.getElementById("revealButton").addEventListener("click", function() {
@@ -254,14 +252,8 @@
             error: err.toString(),
             time: new Date().toISOString()
         };
-        errorLog.push(logEntry);
-
-        const errorLogList = document.getElementById("error-log-list");
-        if (errorLogList) {
-            const li = document.createElement("li");
-            li.innerText = `[${logEntry.time}] ${logEntry.error}`;
-            errorLogList.prepend(li);
-        }
+        axios.post("/log-error", logEntry)
+        .catch(e => console.error("Erreur lors de l'envoi du log au serveur :", e));
 
         console.error(err);
     });
@@ -279,7 +271,7 @@
     }
 
 
-});
+    });
 
     function giveUp() {
         axios.post("/civantix/giveup")
@@ -300,26 +292,6 @@
             });
     }
 
-    function downloadErrorLog() {
-        if (errorLog.length === 0) {
-            alert("Aucune erreur à télécharger.");
-            return;
-        }
-
-        const logText = errorLog.map(entry => {
-            return `[${entry.time}] ${entry.error}`;
-        }).join('\n');
-
-        const blob = new Blob([logText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "error-log.txt";
-        a.click();
-
-        URL.revokeObjectURL(url); // Clean up
-    }
 
 </script>
 </body>

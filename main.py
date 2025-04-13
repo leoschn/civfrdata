@@ -794,6 +794,13 @@ def reset():
         structured_title_embd = pickle.load(fp)
     return redirect(url_for("civantix"))
 
+@app.route('/civantix/log-error', methods=['POST'])
+def save_log():
+    log = request.json
+    with open('log_error.txt', 'a') as f:
+        f.write(log.__repr__())
+        f.write('\n')
+
 
 # if __name__ == '__main__':
 #   app.run()
