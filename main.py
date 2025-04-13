@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 import time
 import pickle
-from turtledemo.penrose import start
 
 import numpy as np
 import regex
@@ -780,7 +779,7 @@ def give_up():
 
 @app.route('/civantix/reset')
 def reset():
-    start = time.time()
+    print('reset')
     global structured_title, structured_text, structured_text_embd, structured_title_embd
     with open("structured_text", "rb") as fp:  # Unpickling
         structured_text = pickle.load(fp)
@@ -793,20 +792,15 @@ def reset():
 
     with open("structured_title_embd", "rb") as fp:  # Unpickling
         structured_title_embd = pickle.load(fp)
-
-    t = start - time.time()
-    with open('log_exec_time.txt', 'a') as f:
-        f.write('Reset time :\n')
-        f.write(t.__repr__())
-        f.write('\n')
-
     return redirect(url_for("civantix"))
 
 @app.route('/civantix/log_error', methods=['POST'])
 def log_error():
     log = request.json
 
-
+    with open('log_error.txt', 'a') as f:
+        f.write(log.message.__repr__())
+        f.write('\n')
 
 
 # if __name__ == '__main__':
