@@ -197,6 +197,7 @@
 function submitGuess() {
     const word = document.getElementById("guess").value.trim().toLowerCase();
     const feedback = document.getElementById("feedback");
+    const errorLog = [];
     if (!word) return;
 
     axios.post("/civantix/guess", { word: word })
