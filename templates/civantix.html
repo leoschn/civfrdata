@@ -244,6 +244,21 @@ function submitGuess() {
         })
         .catch(err => {
             feedback.innerText = "Erreur lors de la requête.";
+
+            const logEntry = {
+                message: errorMessage,
+                error: err.toString(),
+                time: new Date().toISOString()
+            };
+            errorLog.push(logEntry);
+
+            const errorLogList = document.getElementById("error-log-list");
+            if (errorLogList) {
+                const li = document.createElement("li");
+                li.innerText = `[${logEntry.time}] ${logEntry.error}`;
+                errorLogList.prepend(li);
+            }
+
             console.error(err);
         });
 }
