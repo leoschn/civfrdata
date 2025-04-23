@@ -93,7 +93,7 @@ def extract_from_string_raw(s, player_id_dict, role_id_dict, verbose=False):
         data['Map played']=splited_s[2+dec].strip()
 
         #extract map bans
-        if 'map' in splited_s[3+dec]:
+        if 'map bans' in splited_s[3+dec]:
 
             line = splited_s[3+dec].split(':')
             bans = line[1].split('/')
@@ -102,6 +102,8 @@ def extract_from_string_raw(s, player_id_dict, role_id_dict, verbose=False):
                     data['Map ban{0}'.format(i+1)]=bans[i].strip()
                 except :
                     data['Map ban{0}'.format(i+1)]=0
+        else :
+            dec-=1
 
         #extract leader bans
         if 'leader' in splited_s[4+dec]:
