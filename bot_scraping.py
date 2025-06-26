@@ -21,7 +21,7 @@ def add_new_tables_to_db(db_file):
     conn = sqlite3.connect(db_file)
 
 
-
+#test
 def extract_from_string_raw(s, player_id_dict, role_id_dict, verbose=False):
     data = {}
     pattern_role = r'\<@&(.*?)\>'
