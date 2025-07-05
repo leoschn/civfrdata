@@ -30,10 +30,10 @@
       <div class="col-md-4 mb-4">
         <div class="card shadow-sm rounded-4" style="border: 2px solid #fcfcfc; background-color: #343a40;">
           <div class="card-header text-center rounded-top-4" style="background-color: #495057;">
-            <h5 class="card-title mb-0 text-white">{{ player['pseudo'] }}</h5>
+            <h5 class="card-title mb-0 text-white">{{ player['player_name'] }}</h5>
           </div>
           <div class="card-body text-center">
-            <a href="{{ url_for('player_details', player_name=player['pseudo']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
+            <a href="{{ url_for('player_details', player_id=player['player_id']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
               Voir les détails
             </a>
           </div>
@@ -74,7 +74,7 @@ $(function() {
     e.preventDefault();
     var query = $("#playerQuery").val().trim();
     if(query) {
-      var url = "{{ url_for('player_details', player_name='__player__') }}".replace('__player__', encodeURIComponent(query));
+      var url = "{{ url_for('player_details', player_id='__player__') }}".replace('__player__', encodeURIComponent(query));
       window.location.href = url;
     }
   });

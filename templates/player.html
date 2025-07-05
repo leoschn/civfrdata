@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Player Details - {{ player.pseudo }}{% endblock %}
+{% block title %}Player Details - {{ player.player_name }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -13,10 +13,10 @@
     <!-- Carte d'information du joueur -->
     <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
         <div class="card-body">
-            <h4 class="card-title"> {{ player.pseudo }} </h4>
+            <h4 class="card-title"> {{ player.player_name }} </h4>
             <p class="card-text">
                 <strong>Team:</strong>
-                <a href="{{ url_for('team_details', team_name=player.team) }}" class="text-info">
+                <a href="{{ url_for('team_details', team_id=player.team) }}" class="text-info">
                     {{ player.team }}
                 </a><br>
                 <strong>Total Games:</strong> {{ player.total_games }}
@@ -49,7 +49,7 @@
                         {% for match in player.matches|reverse %}
                         {% if match.result == 'win' %}
                         <li class="list-group-item bg-success bg-opacity-25 text-white">
-                            <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info"
+                            <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
                                 {{ match.opponent }}
                             </a>
@@ -73,7 +73,7 @@
                         </li>
                         {% else %}
                         <li class="list-group-item bg-danger bg-opacity-25 text-white">
-                            <a href="{{ url_for('team_details', team_name=match.opponent) }}" class="text-info"
+                            <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
                                 {{ match.opponent }}
                             </a>

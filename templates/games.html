@@ -107,7 +107,7 @@
         <div class="container text-center my-3">
             <div class="row">
                 <div class="col">
-                    <a href="{{ url_for('team_details', team_name=game['Team A']) }}"
+                    <a href="{{ url_for('team_details', team_id=game['Team A']) }}"
                        style="text-decoration: none; color: {{ 'green' if game['Team A'].strip() == game['Winner'].strip() else 'red' }};">
                         {{ game['Team A'] }}
                     </a>
@@ -116,7 +116,7 @@
                     <span style="font-weight: bold;">VS</span>
                 </div>
                 <div class="col">
-                    <a href="{{ url_for('team_details', team_name=game['Team B']) }}"
+                    <a href="{{ url_for('team_details', team_id=game['Team B']) }}"
                        style="text-decoration: none; color: {{ 'green' if game['Team B'].strip() == game['Winner'].strip() else 'red' }};">
                         {{ game['Team B'] }}
                     </a>
@@ -132,7 +132,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{ url_civ[game['PickA1']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerA1']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerA1']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerA1'] }}
                                 </a>
@@ -141,7 +141,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{ url_civ[game['PickA2']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerA2']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerA2']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerA2'] }}
                                 </a>
@@ -161,7 +161,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{ url_civ[game['PickB1']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerB1']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerB1']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerB1'] }}
                                 </a>
@@ -170,7 +170,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{ url_civ[game['PickB2']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerB2']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerB2']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerB2'] }}
                                 </a>
@@ -226,7 +226,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{ url_civ[game['PickA3']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerA3']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerA3']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerA3'] }}
                                 </a>
@@ -235,7 +235,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{ url_civ[game['PickA4']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerA4']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerA4']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerA4'] }}
                                 </a>
@@ -255,7 +255,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{ url_civ[game['PickB3']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerB3']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerB3']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerB3'] }}
                                 </a>
@@ -264,7 +264,7 @@
                         <div class="col-sm-4">
                             <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{ url_civ[game['PickB4']] }}" />
                             <span class="text-player">
-                                <a href="{{ url_for('player_details', player_name=game['PlayerB4']) }}"
+                                <a href="{{ url_for('player_details', player_id=game['PlayerB4']) }}"
                                    style="text-decoration: none; color: inherit;">
                                     {{ game['PlayerB4'] }}
                                 </a>

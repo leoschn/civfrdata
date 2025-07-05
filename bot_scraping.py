@@ -228,7 +228,9 @@ async def on_ready():
 
     data = pd.read_csv(base_path + 'data_S15_test.csv')
     data['id'] = data.index
-    data.to_sql('games', conn)
+    data.to_sql('games', conn,dtype={'Team A':'INTEGER','Team B':'INTEGER','Winner':'INTEGER','PlayerA1':'INTEGER'
+                                     ,'PlayerA2':'INTEGER','PlayerA3':'INTEGER','PlayerA4':'INTEGER','PlayerB1':'INTEGER'
+                                     ,'PlayerB2':'INTEGER','PlayerB3':'INTEGER','PlayerB4':'INTEGER'})
 
     conn.commit()
 
@@ -330,7 +332,7 @@ async def on_ready():
             CREATE TABLE players (
                 player_id INTEGER,
                 player_name TEXT NOT NULL,
-                team TEXT NOT NULL
+                team INTEGER NOT NULL
             )
         ''')
 

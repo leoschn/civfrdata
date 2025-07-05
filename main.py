@@ -117,8 +117,9 @@ for ident, fichier, _ in list_map_url:
 # Dictionnaires pour les jolis noms (display names)
 CIV_DISPLAY_NAMES = {ident: display for ident, _, display in list_civ_url}
 MAP_DISPLAY_NAMES = {ident: display for ident, _, display in list_map_url}
+
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('database_test.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -137,31 +138,30 @@ app = Flask(__name__)
 def get_all_players():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
-    players = conn.execute('SELECT pseudo FROM players ORDER BY LOWER(pseudo) ASC').fetchall()
+    players = conn.execute('SELECT player_id,player_name FROM players ORDER BY LOWER(player_name) ASC').fetchall()
     conn.close()
     return players
 
 def get_all_teams():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
-    teams = conn.execute('SELECT team_name, division FROM teams ORDER BY LOWER(team_name) ASC').fetchall()
+    teams = conn.execute('SELECT team_id, team_name, division FROM teams ORDER BY LOWER(team_name) ASC').fetchall()
     conn.close()
     return teams
 
 
-def get_player_stats(player_name):
+def get_player_stats(player_id):
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
 
    # Récupérer les informations du joueur dans la table players
     player_row = conn.execute(
-        'SELECT * FROM players WHERE pseudo = ?', (player_name,)
-    ).fetchone()
+        'SELECT * FROM players WHERE player_id = ?', (player_id,)).fetchone()
     if player_row is None:
         conn.close()
         return None  # Le joueur n'existe pas
 
-    player_id = player_row['player_id']
+    player_name = player_row['player_name']
     team = player_row['team']
 
     # Récupérer les game_ids depuis la table de liaison player_games pour ce player_id
@@ -188,11 +188,11 @@ def get_player_stats(player_name):
         # Vérifier si le joueur est dans l'équipe A
         for pos in ["1", "2", "3", "4"]:
             player_col = "PlayerA" + pos
-            if game[player_col] and game[player_col].strip() == player_name:
+            if game[player_col] and game[player_col] == player_id:
                 # Le joueur est dans l'équipe A
-                opponent = game["Team B"].strip() if game["Team B"] else ""
+                opponent = game["Team B"] if game["Team B"] else ""
                 # Le résultat est "win" si Team A est gagnante, sinon "loss"
-                result = "win" if game["Team A"] and game["Winner"] and game["Team A"].strip() == game["Winner"].strip() else "loss"
+                result = "win" if game["Team A"] and game["Winner"] and game["Team A"] == game["Winner"] else "loss"
                 date = game["Date"]
                 if result == "win":
                     wins += 1
@@ -226,9 +226,9 @@ def get_player_stats(player_name):
         if not found_slot:
             for pos in ["1", "2", "3", "4"]:
                 player_col = "PlayerB" + pos
-                if game[player_col] and game[player_col].strip() == player_name:
-                    opponent = game["Team A"].strip() if game["Team A"] else ""
-                    result = "win" if game["Team B"] and game["Winner"] and game["Team B"].strip() == game["Winner"].strip() else "loss"
+                if game[player_col] and game[player_col] == player_id:
+                    opponent = game["Team A"] if game["Team A"] else ""
+                    result = "win" if game["Team B"] and game["Winner"] and game["Team B"] == game["Winner"].strip() else "loss"
                     date = game["Date"]
                     if result == "win":
                         wins += 1
@@ -261,6 +261,7 @@ def get_player_stats(player_name):
     conn.close()
 
     return {
+        "player_id": player_id,
         "pseudo": player_name,
         "team": team,
         "matches": matches,
@@ -271,7 +272,7 @@ def get_player_stats(player_name):
         "maps": map_counts
     }
 
-def get_team_stats(team_name):
+def get_team_stats(team_id):
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
 
@@ -281,25 +282,28 @@ def get_team_stats(team_name):
       FROM games
       WHERE "Team A" = ? OR "Team B" = ?
     """
-    matches_data = conn.execute(matches_query, (team_name, team_name)).fetchall()
-
+    matches_data = conn.execute(matches_query, (team_id, team_id)).fetchall()
     matches = []
     wins = 0
     maps_counts = {}
-
+    divisions =[]
     for game in matches_data:
-        div = game["Division"]
+
+        divisions.append(game["Division"])
         # On suppose que la colonne "Date" existe et contient la date du match.
-        match_date = game["Date"] if "Date" in game.keys() else "N/A"
+        match_date = game["Date"]
         # Identifier de quel côté se trouve l'équipe et déterminer l'opposant et le résultat.
-        if game["Team A"].strip() == team_name:
-            opponent = game["Team B"].strip() if game["Team B"] else ""
-            result = "win" if game["Winner"] and game["Team A"].strip() == game["Winner"].strip() else "loss"
-        elif game["Team B"].strip() == team_name:
-            opponent = game["Team A"].strip() if game["Team A"] else ""
-            result = "win" if game["Winner"] and game["Team B"].strip() == game["Winner"].strip() else "loss"
+        if game["Team A"] == team_id:
+            print('A')
+            opponent = game["Team B"] if game["Team B"] else ""
+            result = "win" if game["Winner"] and game["Team A"] == game["Winner"] else "loss"
+        elif game["Team B"] == team_id:
+            print('B')
+            opponent = game["Team A"] if game["Team A"] else ""
+            result = "win" if game["Winner"] and game["Team B"] == game["Winner"] else "loss"
         else:
             continue  # Ce cas ne devrait pas se produire
+
 
         if result == "win":
             wins += 1
@@ -330,22 +334,27 @@ def get_team_stats(team_name):
     winrate = wins / total_games if total_games > 0 else 0.0
     loses = total_games - wins
     # Récupérer la liste des joueurs qui appartiennent à cette équipe depuis la table players
-    players = conn.execute('SELECT * FROM players WHERE team = ?', (team_name,)).fetchall()
+
+    players = conn.execute('SELECT * FROM players WHERE team = ?', (team_id,)).fetchall()
+    team_name = conn.execute('SELECT team_name FROM teams WHERE team_id = ?', (team_id,)).fetchall()[0]['team_name']
     conn.close()
 
+
+
     return {
-        "team": team_name,
+        "team_id": team_id,
+        "team_name":team_name,
         "matches": matches,
         "total_games": total_games,
         "wins": wins,
         "winrate": winrate,
         "maps": maps_counts,
         "players": players,
-        "division": div,
+        "division": max(set(divisions), key=divisions.count),
         "loses": loses,
     }
 
-def get_minimal_team_stats(team_name):
+def get_minimal_team_stats(team_id):
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
 
@@ -355,7 +364,7 @@ def get_minimal_team_stats(team_name):
       FROM games
       WHERE "Team A" = ? OR "Team B" = ?
     """
-    matches_data = conn.execute(matches_query, (team_name, team_name)).fetchall()
+    matches_data = conn.execute(matches_query, (team_id, team_id)).fetchall()
 
     wins = 0
     loses = 0
@@ -363,12 +372,12 @@ def get_minimal_team_stats(team_name):
     for game in matches_data:
         div = game["Division"]
         # Identifier de quel côté se trouve l'équipe et déterminer l'opposant et le résultat.
-        if game["Team A"].strip() == team_name:
-            opponent = game["Team B"].strip() if game["Team B"] else ""
-            result = "win" if game["Winner"] and game["Team A"].strip() == game["Winner"].strip() else "loss"
-        elif game["Team B"].strip() == team_name:
-            opponent = game["Team A"].strip() if game["Team A"] else ""
-            result = "win" if game["Winner"] and game["Team B"].strip() == game["Winner"].strip() else "loss"
+        if game["Team A"] == team_id:
+            opponent = game["Team B"] if game["Team B"] else ""
+            result = "win" if game["Winner"] and game["Team A"] == game["Winner"] else "loss"
+        elif game["Team B"] == team_id:
+            opponent = game["Team A"] if game["Team A"] else ""
+            result = "win" if game["Winner"] and game["Team B"] == game["Winner"] else "loss"
         else:
             continue  # Ce cas ne devrait pas se produire
 
@@ -382,7 +391,7 @@ def get_minimal_team_stats(team_name):
 
 
     return {
-        "team": team_name,
+        "team_id": team_id,
         "total_games": total_games,
         "wins": wins,
         "loses": loses,
@@ -407,7 +416,7 @@ def landingpage():
     # On s'assure que le nombre de victoires est un entier
 
         for team in team_list:
-            stats = get_minimal_team_stats(team['team_name'])
+            stats = get_minimal_team_stats(team['team_id'])
             team["wins"] = stats["wins"]
             team["loses"] = stats["loses"]
             team["total_games"] = stats["total_games"]
@@ -452,18 +461,18 @@ def team_list():
     teams = get_all_teams()
     return render_template('team_list.html', teams=teams)
 
-@app.route('/player/<player_name>')
-def player_details(player_name):
+@app.route('/player/<player_id>')
+def player_details(player_id):
     # Récupère toutes les infos détaillées du joueur
-    player = get_player_stats(player_name)
+    player = get_player_stats(player_id)
     if player is None:
         abort(404)
     return render_template('player.html', player=player,url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
                            url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES)
 
-@app.route('/team/<team_name>')
-def team_details(team_name):
-    team = get_team_stats(team_name)
+@app.route('/team/<int:team_id>')
+def team_details(team_id):
+    team = get_team_stats(team_id)
     if team is None:
         abort(404)
     return render_template('team.html', team=team, url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
@@ -473,7 +482,8 @@ def team_details(team_name):
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    team = request.form.get('team')
+    team_name = request.form.get('team')
+
     map = request.form.get('map')
     div = request.form.get('div')
     conn = get_db_connection()
@@ -481,23 +491,27 @@ def search():
     list_team = conn.execute('SELECT DISTINCT "Team A" FROM games').fetchall()
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
 
+    if team_name is not None:
+        team_id = conn.execute('SELECT team_id FROM teams WHERE team_name = ?', team_name).fetchone()
+    else:
+        team_id = None
 
-    if map == 'None' and div=='None' and team=='None':
+    if map == 'None' and div=='None' and team_id=='None':
         games = conn.execute('SELECT * FROM games ').fetchall()
     elif map == 'None' and div=='None':
-        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?)',(team,team)).fetchall()
-    elif team == 'None' and div=='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?)',(team_id,team_id)).fetchall()
+    elif team_id == 'None' and div=='None':
         games = conn.execute('SELECT * FROM games WHERE ("Map played" = ? )', (map,)).fetchall()
-    elif team == 'None' and map =='None':
+    elif team_id == 'None' and map =='None':
         games = conn.execute('SELECT * FROM games WHERE ("Division" = ? )', (div,)).fetchall()
     elif div == 'None':
-        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? )', (team,team,map,)).fetchall()
-    elif team =='None':
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? )', (team_id,team_id,map,)).fetchall()
+    elif team_id =='None':
         games = conn.execute('SELECT * FROM games WHERE ("Map played" = ? ) AND ("Division" = ? )', (map,div,)).fetchall()
     elif map =='None':
-        games = conn.execute('SELECT * FROM games WHERE  ("Team A" = ? OR "Team B" = ?) AND ("Division" = ? )', (team,team,div,)).fetchall()
+        games = conn.execute('SELECT * FROM games WHERE  ("Team A" = ? OR "Team B" = ?) AND ("Division" = ? )', (team_id,team_id,div,)).fetchall()
     else :
-        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? ) AND ("Division" = ? )', (team, team, map, div)).fetchall()
+        games = conn.execute('SELECT * FROM games WHERE ("Team A" = ? OR "Team B" = ?) AND ("Map played" = ? ) AND ("Division" = ? )', (team_id, team_id, map, div)).fetchall()
     conn.close()
     games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     return render_template('index.html', games=games,url_civ=CIV_ASSETS_NAMES,
