@@ -17,7 +17,7 @@
             <p class="card-text">
                 <strong>Team:</strong>
                 <a href="{{ url_for('team_details', team_id=player.team) }}" class="text-info">
-                    {{ player.team }}
+                    {{ team_mapping[player.team] }}
                 </a><br>
                 <strong>Total Games:</strong> {{ player.total_games }}
             </p>
@@ -51,7 +51,7 @@
                         <li class="list-group-item bg-success bg-opacity-25 text-white">
                             <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
-                                {{ match.opponent }}
+                                {{ team_mapping[match.opponent] }}
                             </a>
                             <span>
                         Victory By
@@ -75,7 +75,7 @@
                         <li class="list-group-item bg-danger bg-opacity-25 text-white">
                             <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
-                                {{ match.opponent }}
+                                {{ team_mapping[match.opponent] }}
                             </a>
                             <span>
                         Defeat By

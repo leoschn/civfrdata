@@ -7,10 +7,10 @@
   <div class="container">
     <form class="d-flex w-100" method="POST" action="{{ url_for('search') }}">
       <div class="input-group w-100">
-        <select name="player" class="form-select rounded-pill me-2" aria-label="Select Player">
-          <option selected value='"PlayerA1"'>All Players</option>
-          {% for player in list_player %}
-            <option value="{{ player['player_id'] }}">{{ player_mapping[player['player_id']] }}</option>
+        <select name="civ" class="form-select rounded-pill me-2" aria-label="Select Player">
+          <option selected value='All civs'>All civs</option>
+          {% for civ in list_civs %}
+            <option value="{{civ }}">{{ civ }}</option>
           {% endfor %}
         </select>
         <select name="team" class="form-select rounded-pill me-2" aria-label="Select Team">
@@ -41,34 +41,17 @@
 
 {% block content %}
 <div class="container">
-  <h1 class="text-center display-4 text-white mb-5" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Games Overview</h1>
+  <h1 class="text-center display-4 text-white mb-5" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Civ data </h1>
+    </div>
   <!-- Affichage des résultats de la recherche ou des games -->
-  <div class="row">
-    {% for game in games %}
-    <div class="col-md-4 mb-4">
-      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; transition: transform 0.3s;">
-        <div class="card-body">
-          <h4 class="card-title">{{ game.teamA }} vs {{ game.teamB }}</h4>
-          <p class="card-text">
-            <strong>Winner:</strong> {{ game.winner }}<br>
-            <strong>Map:</strong> {{ game.map_played }}<br>
-            {% if game.date %}
-            <strong>Date:</strong> {{ game.date }}
-            {% endif %}
-          </p>
-          <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-light rounded-pill">View Details</a>
-        </div>
-      </div>
-    </div>
-    {% else %}
-    <div class="col-12">
-      <div class="alert alert-info text-center">
-        No games found.
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+    {% for civ in civ_data %}
+{{civ}}
+<div class="progress">
+  <div class="progress-bar bg-success" role="progressbar" style="width: {{ civ_data[civ]['win_rate'] }}%" aria-valuenow="{{ civ_data[civ]['win_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['win_rate'] }}%</div>
+  <div class="progress-bar bg-warning" role="progressbar" style="width: {{ civ_data[civ]['unknown_rate'] }}%" aria-valuenow="{{ civ_data[civ]['unknown_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['unknown_rate'] }}%</div>
+  <div class="progress-bar bg-danger" role="progressbar" style="width: {{ civ_data[civ]['lose_rate'] }}%" aria-valuenow="{{ civ_data[civ]['lose_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['lose_rate'] }}%</div>
 </div>
+    {% endfor %}
 
 <script>
   document.querySelectorAll('.card').forEach(function(card) {

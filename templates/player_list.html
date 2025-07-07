@@ -59,9 +59,15 @@
 $(function() {
   var availablePlayers = [
     {% for player in players %}
-      "{{ player['pseudo'] }}",
+      "{{ player['player_name'] }}",
     {% endfor %}
   ];
+
+      var playerMap = {
+    {% for player in players %}
+      "{{ player['player_name'] }}": "{{ player['player_id'] }}",
+    {% endfor %}
+  };
   
   // Active l'autocomplétion après avoir tapé 1 caractère
   $("#playerQuery").autocomplete({
@@ -73,8 +79,9 @@ $(function() {
   $("#playerSearchForm").on("submit", function(e) {
     e.preventDefault();
     var query = $("#playerQuery").val().trim();
+    var playerId = playerMap[query];
     if(query) {
-      var url = "{{ url_for('player_details', player_id='__player__') }}".replace('__player__', encodeURIComponent(query));
+      var url = "{{ url_for('player_details', player_id=0) }}".replace(0, encodeURIComponent(playerId));
       window.location.href = url;
     }
   });

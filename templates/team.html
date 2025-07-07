@@ -52,12 +52,12 @@
                       <span>
                         <a href="{{ url_for('team_details', team_id=team.team_id) }}" class="text-info"
                            style="text-decoration: none;">
-                          {{ team.team }}
+                          {{ team.team_name }}
                         </a>
                         vs.
                         <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                            style="text-decoration: none;">
-                          {{ match.opponent }}
+                          {{ teams_mapping[match.opponent] }}
                         </a>
                       </span>
                                 <span>
@@ -83,12 +83,12 @@
                       <span>
                         <a href="{{ url_for('team_details', team_id=team.team_id) }}" class="text-info"
                            style="text-decoration: none;">
-                          {{ team.team }}
+                          {{ team.team_name }}
                         </a>
                         vs.
                         <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                            style="text-decoration: none;">
-                          {{ match.opponent }}
+                          {{ teams_mapping[match.opponent] }}
                         </a>
                       </span>
                                 <span>

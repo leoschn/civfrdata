@@ -9,7 +9,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-1" style="background-color: {{ team_a_color }}">
-                        <span class="text-team"> {{ game['Team A'] }} </span>
+                        <span class="text-team"> {{ team_mapping[game['Team A']] }} </span>
                     </div>
                     {% for pick in ['PickA1', 'PickA2', 'PickA3', 'PickA4'] %}
                         <div class="col-md-1" style="background-color: {{ team_a_color }}">
@@ -25,7 +25,8 @@
                         </div>
                     {% endfor %}
                     <div class="col-md-1" style="background-color: {{ team_b_color }}">
-                        <span class="text-team"> {{ game['Team B'] }} </span>
+                        <span class="text-team">
+                            {{ team_mapping[game['Team B']] }} </span>
                     </div>
                     <div class="col-md-1">
                         <span class="text-team"> {{ game['Date'] }} </span>
