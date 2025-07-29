@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="background-color: rgba(0, 0, 0, 0.5); padding: 1rem;">
+    <!-- Section Maps (Bans et Map jouée) -->
+    <div class="container text-center">
+        <div class="row">
+            <div class="col">
+                <a href="{{ url_for('team_details', team_id=game['Team A']) }}"
+                   style="text-decoration: none; color: {{ 'green' if game['Team A'] == game['Winner'] else 'red' }};">
+                    {{ team_mapping[game['Team A']] }}
+                </a>
+            </div>
+
+            <div class="col">
+                <a href="{{ url_for('team_details', team_id=game['Team B']) }}"
+                   style="text-decoration: none; color: {{ 'green' if game['Team B'] == game['Winner'] else 'red' }};">
+                    {{ team_mapping[game['Team B']] }}
+                </a>
+            </div>
+        </div>
+        <hr class="solid" style="color: #C6A873;">
+    </div>
+
+
+
+    <div class="container-fluid">
+        <div class="row justify-content-between">
+            <div class="col-3 ">
+                <img class="img-fluid" alt="{{ game['PickA1'] }}" src="{{ url_civ[game['PickA1']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerA1']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerA1']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickA2'] }}" src="{{ url_civ[game['PickA2']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerA2']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerA2']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickA3'] }}" src="{{ url_civ[game['PickA3']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerA3']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerA3']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickA4'] }}" src="{{ url_civ[game['PickA4']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerA4']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerA4']] }}
+                    </a>
+                </span>
+            </div>
+
+            <div class="col-6">
+
+                <div class="row">
+                    <span class="text-base">
+                        Victory from {{team_mapping[game['Winner']]}} by {{game['Victory']}} turn {{game['Victory Turn']}}
+                        <br>
+                        <br>
+
+                        <hr class="solid" style="color: #C6A873;">
+                        <br>
+                        <br>
+                    </span>
+
+                </div>
+
+
+
+                <div class="row">
+                    <div class="col-4">
+                        <img class="img-fluid" alt="{{ game['Map ban1'] }}" title="{{ game['Map ban1'] }}"
+                             src="{{ url_map[game['Map ban1']] }}"/>
+                    </div>
+                    <div class="col-4">
+                        <span class="text-base" style="font-size : large">
+                            <br>
+                            <br>
+                            Map played
+                        </span>
+                    </div>
+                    <div class="col-4">
+                        <img class="img-fluid" alt="{{ game['Map ban2'] }}" title="{{ game['Map ban2'] }}"
+                             src="{{ url_map[game['Map ban2']] }}"/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+
+                    </div>
+                    <div class="col-4">
+                        <img class="img-fluid" alt="{{ game['Map played'] }}" title="{{ game['Map played'] }}"
+                             src="{{ url_map[game['Map played']] }}"/>
+                    </div>
+                    <div class="col-4">
+
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <img class="img-fluid" alt="{{ game['Map ban3'] }}" title="{{ game['Map ban3'] }}"
+                             src="{{ url_map[game['Map ban3']] }}"/>
+                    </div>
+                    <div class="col-4">
+
+                    </div>
+                    <div class="col-4">
+                        <img class="img-fluid" alt="{{ game['Map ban4'] }}" title="{{ game['Map ban4'] }}"
+                             src="{{ url_map[game['Map ban4']] }}"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <img class="img-fluid" alt="{{ game['PickB1'] }}" src="{{ url_civ[game['PickB1']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerB1']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerB1']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickB2'] }}" src="{{ url_civ[game['PickB2']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerB2']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerB2']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickB3'] }}" src="{{ url_civ[game['PickB3']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerB3']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerB3']] }}
+                    </a>
+                </span>
+                <img class="img-fluid" alt="{{ game['PickB4'] }}" src="{{ url_civ[game['PickB4']] }}"/>
+                <span class="text-player">
+                    <a href="{{ url_for('player_details', player_id=game['PlayerB4']) }}"
+                       style="text-decoration: none; color: inherit;">
+                        {{ player_mapping[game['PlayerB4']] }}
+                    </a>
+                </span>
+            </div>
+        </div>
+    </div>
+    <hr class="solid" style="color: #C6A873;">
+    <div class="row justify-content-between">
+        <div class="col-5">
+            <div class="row">
+                <div class="col-9">
+                    <div class="row">
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban1'] }}" src="{{ url_civ[game['Ban1']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban3'] }}" src="{{ url_civ[game['Ban3']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban5'] }}" src="{{ url_civ[game['Ban5']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban7'] }}" src="{{ url_civ[game['Ban7']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban9'] }}" src="{{ url_civ[game['Ban9']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <img class="img-fluid" alt="{{ game['Ban11'] }}" src="{{ url_civ[game['Ban11']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-6">
+                            <img class="img-fluid" alt="{{ game['Ban13'] }}" src="{{ url_civ[game['Ban13']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-2">
+        </div>
+
+        <div class="col-5">
+            <div class="row">
+
+                <div class="col-3">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <img class="img-fluid" alt="{{ game['Ban14'] }}" src="{{ url_civ[game['Ban14']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-6">
+                            <img class="img-fluid" alt="{{ game['Ban12'] }}" src="{{ url_civ[game['Ban12']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-9">
+                    <div class="row">
+                        <div class="col-sm-2">
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban10'] }}" src="{{ url_civ[game['Ban10']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban8'] }}" src="{{ url_civ[game['Ban8']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban6'] }}" src="{{ url_civ[game['Ban6']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban4'] }}" src="{{ url_civ[game['Ban4']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <img class="img-fluid" alt="{{ game['Ban2'] }}" src="{{ url_civ[game['Ban2']] }}"
+                                 title="Ban 1"/>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

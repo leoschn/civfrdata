@@ -5,7 +5,7 @@
 {% block extra_nav %}
 <nav class="navbar navbar-expand-md navbar-dark" style="background: linear-gradient(135deg, #2c3e50, #000000);">
   <div class="container">
-    <form class="d-flex w-100" method="POST" action="{{ url_for('search') }}">
+    <form class="d-flex w-100" method="POST" action="{{ url_for('civ_data_search') }}">
       <div class="input-group w-100">
         <select name="civ" class="form-select rounded-pill me-2" aria-label="Select Player">
           <option selected value='All civs'>All civs</option>
@@ -45,12 +45,37 @@
     </div>
   <!-- Affichage des résultats de la recherche ou des games -->
     {% for civ in civ_data %}
-{{civ}}
-<div class="progress">
-  <div class="progress-bar bg-success" role="progressbar" style="width: {{ civ_data[civ]['win_rate'] }}%" aria-valuenow="{{ civ_data[civ]['win_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['win_rate'] }}%</div>
-  <div class="progress-bar bg-warning" role="progressbar" style="width: {{ civ_data[civ]['unknown_rate'] }}%" aria-valuenow="{{ civ_data[civ]['unknown_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['unknown_rate'] }}%</div>
-  <div class="progress-bar bg-danger" role="progressbar" style="width: {{ civ_data[civ]['lose_rate'] }}%" aria-valuenow="{{ civ_data[civ]['lose_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['lose_rate'] }}%</div>
-</div>
+      <div class="row">
+            <div class="col-2">
+                <div class="container-fluid">
+                    <img class="img-fluid" alt="{{ civ }}" src="{{ url_civ[civ]}}" />
+                </div>
+            </div>
+            <div class="col-4">
+              <div class="container-fluid">
+                <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
+                  <div class="card-body">
+                    <p class="card-text">
+                      <strong>Win rate on {{civ_data[civ]['pick']}} games: {{ civ_data[civ]['win_rate'] }}% <br></strong>
+                      <strong>Pick rate on {{total_game}} games: {{ civ_data[civ]['pick_rate'] }}% ban rate : {{ civ_data[civ]['ban_rate'] }}% <br></strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="progress">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ civ_data[civ]['win_rate'] }}%" aria-valuenow="{{ civ_data[civ]['win_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['win_rate'] }}%</div>
+                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ civ_data[civ]['lose_rate'] }}%" aria-valuenow="{{ civ_data[civ]['lose_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['lose_rate'] }}%</div>
+              </div>
+              <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['pick_rate'] }}% ; background-color: rgb(255,215,0)" aria-valuenow="{{ civ_data[civ]['pick_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['pick_rate'] }}%</div>
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['ban_rate'] }}% ; background-color: rgb(38, 38, 38)" aria-valuenow="{{ civ_data[civ]['ban_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['ban_rate'] }}%</div>
+              </div>
+            </div>
+      </div>
+
+
     {% endfor %}
 
 <script>

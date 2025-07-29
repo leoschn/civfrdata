@@ -75,11 +75,9 @@ list_civ_url = [
     ("suleiman (muhtesem)", 'Suleiman_29_29.webp', "Suleiman (Muhtesem)"),
     ("suleiman (kanuni)", 'Suleiman_29.webp', "Suleiman (Kanuni)"),
     ("soundiata keita", 'Sundiata_Keita_29.webp', "Sundiata Keita"),
-    ("soundiata", 'Sundiata_Keita_29.webp', "Sundiata"),
     ("tamar", 'Tamar_29.webp', "Tamar"),
     ("teddy roosevelt (bm)", 'Teddy_Roosevelt_29.webp', "Teddy Roosevelt (BM)"),
     ("teddy roosevelt (rough rider)", 'Teddy_Roosevelt_29_29.webp', "Teddy Roosevelt (Rough Rider)"),
-    ("teddy rr", 'Teddy_Roosevelt_29_29.webp', "Teddy Roosevelt (RR)"),
     ("theodora", 'Theodora_29.webp', "Theodora"),
     ("tokugawa", 'Tokugawa_29.webp', "Tokugawa"),
     ("tomyris", 'Tomyris_29.webp', "Tomyris"),
@@ -153,34 +151,34 @@ def get_civ_data_from_game(games,civs):
     civ_data = {}
     total_game = len(games)
     for civ in civs :
-        civ_data[civ]=np.array([0,0,0,0,0]) #{'win':0,'lose':0,'ban':0,'pick':0,'unknown':0}
+        civ_data[civ]=np.array([0,0,0,0]) #{'win':0,'lose':0,'ban':0,'pick':0}
 
     for game in games :
         for pick in ['PickA1','PickA2','PickA3','PickA4']:
             if game[pick] in civs:
                 if game['Winner'] == game['Team A']:
-                    civ_data[game[pick]]=civ_data[game[pick]]+[1,0,0,1,0]
+                    civ_data[game[pick]]=civ_data[game[pick]]+[1,0,0,1]
                 elif game['Winner'] == game['Team B']:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 1, 0, 1,0]
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 1, 0, 1]
                 else:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1,1]
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1]
 
         for pick in ['PickB1','PickB2','PickB3','PickB4']:
             if game[pick] in civs:
                 if game['Winner'] == game['Team A']:
-                    civ_data[game[pick]]=civ_data[game[pick]] + [0, 1, 0, 1,0]
+                    civ_data[game[pick]]=civ_data[game[pick]] + [0, 1, 0, 1]
                 elif game['Winner'] == game['Team B']:
-                    civ_data[game[pick]] = civ_data[game[pick]]  +[1,0,0,1,0]
+                    civ_data[game[pick]] = civ_data[game[pick]]  +[1,0,0,1]
                 else:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1,1]
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1]
 
         for pick in ['Ban1','Ban2','Ban3','Ban4','Ban5','Ban6','Ban7','Ban8','Ban9','Ban10','Ban11','Ban12']:
             if game[pick] in civs:
-                civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 1, 0, 0]
+                civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 1, 0]
 
     for civ in civs :
         data = civ_data[civ].tolist()
-        civ_data[civ] = {'win_rate':100*data[0]/max(1,data[3]),'lose_rate':100*data[1]/max(1,data[3]),'ban_rate':100*data[2]/total_game,'pick_rate':100*data[3]/total_game,'unknown_rate':100*data[4]/max(1,data[3])}
+        civ_data[civ] = {'win_rate': round(100*data[0]/max(1,data[3]),1),'lose_rate':round(100*data[1]/max(1,data[3]),1),'ban_rate':round(100*data[2]/total_game,1),'pick_rate':round(100*data[3]/total_game,1),'pick':data[3]}
     print(civ_data,total_game)
     return civ_data,total_game
 
@@ -511,7 +509,7 @@ def game(game_id):
     game = get_game(game_id)
     player_mapping=get_all_players_dict()
     team_mapping=get_all_teams_dict()
-    return render_template('games.html', game=game, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME,
+    return render_template('games_civ_draft_style.html', game=game, url_civ=CIV_ASSETS_NAMES, url_map=MAP_ASSETS_NAME,
                            player_mapping=player_mapping,team_mapping=team_mapping)
 
 @app.route('/player')
@@ -618,7 +616,7 @@ def civ_data_search():
         team_id = conn.execute('SELECT team_id FROM teams WHERE team_id = ?', (team_name,)).fetchone()['team_id']
     else:
         team_id = team_name
-    if civ !='All civ':
+    if civ =='All civs':
         civs = list_civs
     else:
         civs = [civ]
