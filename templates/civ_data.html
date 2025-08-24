@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Page Spécifique - Recherche{% endblock %}
+
+{% block extra_nav %}
+<nav class="navbar navbar-expand-md navbar-dark" style="background: linear-gradient(135deg, #2c3e50, #000000);">
+  <div class="container">
+    <form class="d-flex w-100" method="POST" action="{{ url_for('civ_data_search') }}">
+      <div class="input-group w-100">
+        <select name="civ" class="form-select rounded-pill me-2" aria-label="Select Player">
+          <option selected value='All civs'>All civs</option>
+          {% for civ in list_civs %}
+            <option value="{{civ }}">{{ civ }}</option>
+          {% endfor %}
+        </select>
+        <select name="team" class="form-select rounded-pill me-2" aria-label="Select Team">
+          <option selected value='"Team A"'>All Teams</option>
+          {% for team in list_team %}
+            <option value="{{ team['team_id'] }}">{{ team_mapping[team['team_id']] }}</option>
+          {% endfor %}
+        </select>
+        <select name="map" class="form-select rounded-pill me-2" aria-label="Select Map">
+          <option selected value='"Map played"'>All Maps</option>
+          {% for name in list_map %}
+            <option value="{{ name['Map played'] }}">{{ name['Map played'] }}</option>
+          {% endfor %}
+        </select>
+        <select name="div" class="form-select rounded-pill me-2" aria-label="Select Division">
+          <option selected value='"Division"'>All Divisions</option>
+          {% for name in list_div %}
+            <option value="{{ name['Division'] }}">{{ name['Division'] }}</option>
+          {% endfor %}
+        </select>
+        <!-- Bouton de validation ajouté pour lancer la recherche -->
+        <button type="submit" class="btn btn-light rounded-pill ms-2">Search</button>
+      </div>
+    </form>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 class="text-center display-4 text-white mb-5" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Civ data </h1>
+    </div>
+  <!-- Affichage des résultats de la recherche ou des games -->
+    {% for civ in civ_data %}
+      <div class="row">
+            <div class="col-2">
+                <div class="container-fluid">
+                    <img class="img-fluid" alt="{{ civ }}" src="{{ url_civ[civ]}}" />
+                </div>
+            </div>
+            <div class="col-4">
+              <div class="container-fluid">
+                <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
+                  <div class="card-body">
+                    <p class="card-text">
+                      <strong>Win rate on {{civ_data[civ]['pick']}} games: {{ civ_data[civ]['win_rate'] }}% <br></strong>
+                      <strong>Pick rate on {{total_game}} games: {{ civ_data[civ]['pick_rate'] }}% ban rate : {{ civ_data[civ]['ban_rate'] }}% <br></strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="progress">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ civ_data[civ]['win_rate'] }}%" aria-valuenow="{{ civ_data[civ]['win_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['win_rate'] }}%</div>
+                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ civ_data[civ]['lose_rate'] }}%" aria-valuenow="{{ civ_data[civ]['lose_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['lose_rate'] }}%</div>
+              </div>
+              <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['pick_rate'] }}% ; background-color: rgb(255,215,0)" aria-valuenow="{{ civ_data[civ]['pick_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['pick_rate'] }}%</div>
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['ban_rate'] }}% ; background-color: rgb(38, 38, 38)" aria-valuenow="{{ civ_data[civ]['ban_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['ban_rate'] }}%</div>
+              </div>
+            </div>
+      </div>
+
+
+    {% endfor %}
+
+<script>
+  document.querySelectorAll('.card').forEach(function(card) {
+    card.addEventListener('mouseover', function() {
+      this.style.transform = "scale(1.03)";
+    });
+    card.addEventListener('mouseout', function() {
+      this.style.transform = "scale(1)";
+    });
+  });
+</script>
+{% endblock %}

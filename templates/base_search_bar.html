@@ -7,22 +7,34 @@
   <div class="container">
     <form class="d-flex w-100" method="POST" action="{{ url_for('search') }}">
       <div class="input-group w-100">
+        <select name="player" class="form-select rounded-pill me-2" aria-label="Select Player">
+          <option selected value='"PlayerA1"'>All Players</option>
+          {% for player in list_player %}
+            <option value="{{ player['player_id'] }}">{{ player_mapping[player['player_id']] }}</option>
+          {% endfor %}
+        </select>
         <select name="team" class="form-select rounded-pill me-2" aria-label="Select Team">
-          <option selected value="None">All Teams</option>
-          {% for name in list_team %}
-            <option value="{{ name['Team A'] }}">{{ name['Team A'] }}</option>
+          <option selected value='"Team A"'>All Teams</option>
+          {% for team in list_team %}
+            <option value="{{ team['team_id'] }}">{{ team_mapping[team['team_id']] }}</option>
           {% endfor %}
         </select>
         <select name="map" class="form-select rounded-pill me-2" aria-label="Select Map">
-          <option selected value="None">All Maps</option>
+          <option selected value='"Map played"'>All Maps</option>
           {% for name in list_map %}
             <option value="{{ name['Map played'] }}">{{ name['Map played'] }}</option>
           {% endfor %}
         </select>
         <select name="div" class="form-select rounded-pill me-2" aria-label="Select Division">
-          <option selected value="None">All Divisions</option>
+          <option selected value='"Division"'>All Divisions</option>
           {% for name in list_div %}
             <option value="{{ name['Division'] }}">{{ name['Division'] }}</option>
+          {% endfor %}
+        </select>
+        <select name="season" class="form-select rounded-pill me-2" aria-label="Select Season">
+          <option selected value='"Season"'>All Seasons</option>
+          {% for name in list_season %}
+            <option value="{{ name['Season'] }}"> Season {{ name['Season'] }}</option>
           {% endfor %}
         </select>
         <!-- Bouton de validation ajouté pour lancer la recherche -->

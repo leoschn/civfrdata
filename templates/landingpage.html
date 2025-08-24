@@ -35,7 +35,7 @@
                   {% for team in divisions[division] %}
                     <tr>
                       <td>
-                        <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                        <a href="{{ url_for('team_details', team_id=team['team_id']) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
                           {{ team['team_name'] }}
                         </a>
                       </td>

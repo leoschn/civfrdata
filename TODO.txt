@@ -1,4 +1,0 @@
-3 Ajouter une option de téléchargement des données (format csv et sql)
-4 Amélioration de l'interface :
-    noms des teams pour game.html, ordre des ban
-5 Mise a jour automatique (pex journalière) de la base de donnée, atm script a lancer manuellement

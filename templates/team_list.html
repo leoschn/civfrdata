@@ -35,7 +35,7 @@
             </h5>
           </div>
           <div class="card-body text-center">
-            <a href="{{ url_for('team_details', team_name=team['team_name']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
+            <a href="{{ url_for('team_details', team_id=team['team_id']) }}" class="btn btn-outline-light btn-sm rounded-pill shadow-sm">
               Voir les détails
             </a>
           </div>
@@ -64,19 +64,26 @@ $(function() {
       "{{ team['team_name'] }}",
     {% endfor %}
   ];
-  
+
+    var teamMap = {
+    {% for team in teams %}
+      "{{ team['team_name'] }}": "{{ team['team_id'] }}",
+    {% endfor %}
+  };
+
   // Active l'autocomplétion après 1 caractère
   $("#teamQuery").autocomplete({
     source: availableTeams,
     minLength: 1
   });
-  
+
   // Redirection vers la page du détail de l'équipe lors de la soumission du formulaire
   $("#teamSearchForm").on("submit", function(e) {
     e.preventDefault();
     var query = $("#teamQuery").val().trim();
-    if(query) {
-      var url = "{{ url_for('team_details', team_name='__team__') }}".replace('__team__', encodeURIComponent(query));
+    var teamId = teamMap[query];
+    if(teamId) {
+      var url = "{{ url_for('team_details', team_id=0) }}".replace(0, encodeURIComponent(teamId));
       window.location.href = url;
     }
   });
