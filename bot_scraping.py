@@ -165,8 +165,8 @@ civ_fr_id = 'Civfr.com'
 
 @client.event
 async def on_ready():
-
-
+    #
+    #
     for guild in client.guilds:
         if guild.name == civ_fr_id:
 
@@ -217,7 +217,9 @@ async def on_ready():
             df3b = extract_from_serie_raw(df3b)
             df3b['Division'] = '3b'
 
+
             df = pd.concat([df1, df2, df3a, df3b], axis=0)
+            df['Season'] = 15
             df.to_csv(base_path + 'data_S15_test.csv', index=False)
 
     print('report scrapped')
@@ -228,6 +230,15 @@ async def on_ready():
 
     data = pd.read_csv(base_path + 'data_S15_test.csv')
     data['id'] = data.index
+
+    # Dictionnaire pour stocker les games uniques.
+    # Clé : id du joueur.
+    # Valeur : dictionnaire contenant :
+    #   - "TeamA/TeamB"             : ID de l'équipe
+    #   - "Winner"                  : ID de l'équipe ga gnante
+    #   - "PlayerAX/playerBX"       : ID du joueur
+    #   - "Season": numero de la saison
+
     data.to_sql('games', conn,dtype={'Team A':'INTEGER','Team B':'INTEGER','Winner':'INTEGER','PlayerA1':'INTEGER'
                                      ,'PlayerA2':'INTEGER','PlayerA3':'INTEGER','PlayerA4':'INTEGER','PlayerB1':'INTEGER'
                                      ,'PlayerB2':'INTEGER','PlayerB3':'INTEGER','PlayerB4':'INTEGER'})

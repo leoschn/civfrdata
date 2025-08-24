@@ -490,6 +490,7 @@ def index():
     list_team = conn.execute('SELECT DISTINCT "team_id" FROM teams').fetchall()
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
     list_player = conn.execute('SELECT "player_id" FROM players').fetchall()
+    list_season = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
     player_mapping = get_all_players_dict()
     team_mapping=get_all_teams_dict()
     conn.close()
@@ -497,7 +498,8 @@ def index():
     games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     return render_template('index_search_bar.html', games=games, url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
-                           team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player)
+                           team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player,
+                           list_season=list_season)
 
 @app.route('/test')
 def test():
@@ -553,11 +555,13 @@ def search():
     player_name = request.form.get('player')
     map = request.form.get('map')
     div = request.form.get('div')
+    season = request.form.get('season')
     conn = get_db_connection()
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
     list_player = conn.execute('SELECT "player_id" FROM players').fetchall()
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
+    list_season = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
 
     if team_name != '"Team A"':
         team_id = conn.execute('SELECT team_id FROM teams WHERE team_id = ?', (team_name,)).fetchone()['team_id']
@@ -574,13 +578,17 @@ def search():
     if div != '"Division"':
         div = "'"+div+"'"
 
+    if season != '"Season"':
+        season = season
+
     #use fstring to pass either column name or value as variable
-    games = conn.execute(f'SELECT * FROM games WHERE ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("PlayerA1" = {player_id} OR "PlayerA2" = {player_id} OR "PlayerA3" = {player_id} OR "PlayerA4" = {player_id} OR "PlayerB1" = {player_id} OR "PlayerB2" = {player_id} OR "PlayerB3" = {player_id} OR "PlayerB4" = {player_id})')
+    games = conn.execute(f'SELECT * FROM games WHERE ("Season" = {season}) AND ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("PlayerA1" = {player_id} OR "PlayerA2" = {player_id} OR "PlayerA3" = {player_id} OR "PlayerA4" = {player_id} OR "PlayerB1" = {player_id} OR "PlayerB2" = {player_id} OR "PlayerB3" = {player_id} OR "PlayerB4" = {player_id})')
     games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     conn.close()
     return render_template('index_search_bar.html', games=games,url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
-                           team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player)
+                           team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player,
+                           list_season=list_season)
 
 
 @app.route('/data_civ')
@@ -649,19 +657,19 @@ def download_csv(csv_type):
             query = """
             SELECT 
                 t.team_name AS team_name,
-                group_concat(DISTINCT p.pseudo) AS players,
+                group_concat(DISTINCT p.player_name) AS players,
                 (
                     SELECT group_concat(map_info, ', ')
                     FROM (
                         SELECT g."Map played" || ' (' || COUNT(*) || ')' AS map_info
                         FROM team_games tg2
                         JOIN games g ON tg2.game_id = g.id
-                        WHERE tg2.team_name = t.team_name
+                        WHERE tg2.team_id = t.team_id
                         GROUP BY g."Map played"
                     )
                 ) AS maps_played
             FROM teams t
-            LEFT JOIN team_players tp ON t.team_name = tp.team_name
+            LEFT JOIN team_players tp ON t.team_id = tp.team_id
             LEFT JOIN players p ON tp.player_id = p.player_id
             GROUP BY t.team_name
             """
@@ -672,7 +680,7 @@ def download_csv(csv_type):
         elif csv_type == 'players':
             query = """
             SELECT 
-                p.pseudo AS player_name,
+                p.player_name AS player_name,
                 t.team_name AS team_name,
                 (
                     SELECT group_concat(civ_info, ', ')
@@ -695,14 +703,14 @@ def download_csv(csv_type):
                             UNION ALL
                             SELECT "PlayerB4", "PickB4" FROM games
                         ) AS picks
-                        WHERE picks.player = p.pseudo
+                        WHERE picks.player = p.player_id
                         GROUP BY civ
                     )
                 ) AS civ_picks
             FROM players p
             LEFT JOIN team_players tp ON p.player_id = tp.player_id
-            LEFT JOIN teams t ON tp.team_name = t.team_name
-            GROUP BY p.player_id, p.pseudo, t.team_name
+            LEFT JOIN teams t ON tp.team_id = t.team_id
+            GROUP BY p.player_id, p.player_name, t.team_name
             """
             cursor.execute(query)
             rows = cursor.fetchall()
