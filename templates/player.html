@@ -16,9 +16,14 @@
             <h4 class="card-title"> {{ player.player_name }} </h4>
             <p class="card-text">
                 <strong>Team:</strong>
+                {% if team_mapping[player.team] %}
                 <a href="{{ url_for('team_details', team_id=player.team) }}" class="text-info">
                     {{ team_mapping[player.team] }}
                 </a><br>
+                {%else%}
+                Sans équipe actuellement
+                </a><br>
+                {% endif %}
                 <strong>Total Games:</strong> {{ player.total_games }}
             </p>
         </div>
@@ -49,6 +54,11 @@
                         {% for match in player.matches|reverse %}
                         {% if match.result == 'win' %}
                         <li class="list-group-item bg-success bg-opacity-25 text-white">
+                            <a href="{{ url_for('team_details', team_id=match.player_team) }}" class="text-info"
+                               style="text-decoration: none;">
+                                {{ team_mapping[match.player_team] }}
+                            </a>
+                                VS
                             <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
                                 {{ team_mapping[match.opponent] }}
@@ -72,7 +82,14 @@
                             </a>
                         </li>
                         {% else %}
+
                         <li class="list-group-item bg-danger bg-opacity-25 text-white">
+                            <a href="{{ url_for('team_details', team_id=match.player_team) }}" class="text-info"
+                               style="text-decoration: none;">
+                                {{ team_mapping[match.player_team] }}
+                            </a>
+                            <span>
+                                VS
                             <a href="{{ url_for('team_details', team_id=match.opponent) }}" class="text-info"
                                style="text-decoration: none;">
                                 {{ team_mapping[match.opponent] }}
@@ -89,7 +106,7 @@
                           {{ match.v_turn }}
                         </a>
                       </span>
-                            &mdash; game du
+                            game du
                             <a href="{{ url_for('game', game_id=match.id) }}" class="text-info"
                                style="text-decoration: none;">
                                 {{ match.date }}

@@ -193,34 +193,34 @@ async def on_ready():
                 role_id_map[id]=name
 
 
-            c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d1')
-            messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            df1 = pd.DataFrame(messages)
-            df1 = extract_from_serie_raw(df1)
-            df1['Division'] = '1'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d2')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            df2 = pd.DataFrame(messages)
-            df2 = extract_from_serie_raw(df2)
-            df2['Division'] = '2'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3a')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            df3a= pd.DataFrame(messages)
-            df3a = extract_from_serie_raw(df3a)
-            df3a['Division'] = '3a'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3b')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            df3b = pd.DataFrame(messages)
-            df3b = extract_from_serie_raw(df3b)
-            df3b['Division'] = '3b'
-
-
-            df = pd.concat([df1, df2, df3a, df3b], axis=0)
-            df['Season'] = 15
-            df.to_csv(base_path + 'data_S15_test.csv', index=False)
+            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d1')
+            # messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
+            # df1 = pd.DataFrame(messages)
+            # df1 = extract_from_serie_raw(df1)
+            # df1['Division'] = '1'
+            #
+            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d2')
+            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
+            # df2 = pd.DataFrame(messages)
+            # df2 = extract_from_serie_raw(df2)
+            # df2['Division'] = '2'
+            #
+            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3a')
+            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
+            # df3a= pd.DataFrame(messages)
+            # df3a = extract_from_serie_raw(df3a)
+            # df3a['Division'] = '3a'
+            #
+            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3b')
+            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
+            # df3b = pd.DataFrame(messages)
+            # df3b = extract_from_serie_raw(df3b)
+            # df3b['Division'] = '3b'
+            #
+            #
+            # df = pd.concat([df1, df2, df3a, df3b], axis=0)
+            # df['Season'] = 15
+            # df.to_csv(base_path + 'data_S15_test.csv', index=False)
 
     print('report scrapped')
 
@@ -269,7 +269,9 @@ async def on_ready():
     #   - "name"    : team name
     #   - "division": la division de l'équipe (prise lors de la première occurrence).
     teams_dict = {}
-
+    teams_dict_legacy = {}
+    row_name_player_A = ['PlayerA1', 'PlayerA2', 'PlayerA3', 'PlayerA4']
+    row_name_player_B = ['PlayerB1', 'PlayerB2', 'PlayerB3', 'PlayerB4']
     for row in games_data:
 
         game_id = row["index"]
@@ -283,11 +285,20 @@ async def on_ready():
             if teamA not in teams_dict:
                 teams_dict[teamA] = {"players": set(), "games": set(), "division": division}
             teams_dict[teamA]["games"].add(str(game_id))
+            if teamA not in teams_dict_legacy:
+                teams_dict_legacy[teamA] = {"players": set()}
+            for row_name in row_name_player_A :
+                teams_dict_legacy[teamA]["players"].add(row[row_name])
         if teamB != 'UNKNOWN':
             teamB = int(teamB)
             if teamB not in teams_dict:
                 teams_dict[teamB] = {"players": set(), "games": set(), "division": division}
             teams_dict[teamB]["games"].add(str(game_id))
+
+            if teamB not in teams_dict_legacy:
+                teams_dict_legacy[teamB] = {"players": set()}
+            for row_name in row_name_player_B :
+                teams_dict_legacy[teamB]["players"].add(row[row_name])
 
         # Pour les joueurs de l'équipe A (PlayerA1 à PlayerA4)
         for col in ["PlayerA1", "PlayerA2", "PlayerA3", "PlayerA4"]:
@@ -337,6 +348,8 @@ async def on_ready():
     cursor.execute("DROP TABLE IF EXISTS teams")
     cursor.execute("DROP TABLE IF EXISTS team_players")
     cursor.execute("DROP TABLE IF EXISTS team_games")
+    cursor.execute("DROP TABLE IF EXISTS team_players_legacy")
+
 
     # Création de la table players (pour les joueurs)
     cursor.execute('''
@@ -375,6 +388,16 @@ async def on_ready():
             )
         ''')
 
+    # Création de la table team_players_legacy (liaison équipe - joueur)
+    cursor.execute('''
+            CREATE TABLE team_players_legacy (
+                team_id INTEGER,
+                player_id INTEGER,
+                FOREIGN KEY(team_id) REFERENCES teams(team_id),
+                FOREIGN KEY(player_id) REFERENCES players(player_id)
+            )
+        ''')
+
     # Création de la table team_games (liaison équipe - match)
     cursor.execute('''
             CREATE TABLE team_games (
@@ -402,6 +425,13 @@ async def on_ready():
                 cursor.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
             for id in info["players"]:
                 cursor.execute("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)", (team_id, id))
+
+    for team_id, info in teams_dict_legacy.items():
+        if team_id != 'UNKNOWN':
+            team_id = int(team_id)
+            for id in info["players"]:
+                cursor.execute("INSERT INTO team_players_legacy (team_id, player_id) VALUES (?, ?)",
+                           (team_id, id))
 
     conn.commit()
     conn.close()

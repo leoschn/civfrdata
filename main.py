@@ -223,6 +223,7 @@ def get_player_stats(player_id):
             if game[player_col] == player_id:
                 # Le joueur est dans l'équipe A
                 opponent = game["Team B"]
+                player_team = game["Team A"]
                 # Le résultat est "win" si Team A est gagnante, sinon "loss"
                 result = "win" if game["Team A"] == game["Winner"] else "loss"
                 date = game["Date"]
@@ -236,6 +237,7 @@ def get_player_stats(player_id):
                 v_turn = game['Victory Turn']
 
                 matches.append({
+                    "player_team": player_team,
                     "opponent": opponent,
                     "result": result,
                     "civilization": civilization,
@@ -260,18 +262,23 @@ def get_player_stats(player_id):
                 player_col = "PlayerB" + pos
                 if game[player_col] == player_id:
                     opponent =  game["Team A"]
+                    player_team =  game["Team B"]
                     result = "win" if  game["Team B"] == game["Winner"] else "loss"
                     date = game["Date"]
                     if result == "win":
                         wins += 1
                     civilization = game["PickB" + pos].strip()
-                    map_played = game["Map played"].strip()
+                    if game["Map played"]:
+                        map_played = game["Map played"].strip()
+                    else :
+                        map_played = None
 
                     # Récupérer le type et tour de victoire
                     v_type = game['Victory']
                     v_turn = game['Victory Turn']
 
                     matches.append({
+                        "player_team": player_team,
                         "opponent": opponent,
                         "result": result,
                         "civilization": civilization,
@@ -386,6 +393,7 @@ def get_team_stats(team_id):
     # Récupérer la liste des joueurs qui appartiennent à cette équipe depuis la table players
 
     players = conn.execute('SELECT * FROM players WHERE team = ?', (team_id,)).fetchall()
+    players_legacy = conn.execute('SELECT * FROM team_players_legacy WHERE team_id = ?', (team_id,)).fetchall()
     team_name = conn.execute('SELECT team_name FROM teams WHERE team_id = ?', (team_id,)).fetchall()[0]['team_name']
     conn.close()
 
@@ -400,6 +408,7 @@ def get_team_stats(team_id):
         "winrate": winrate,
         "maps": maps_counts,
         "players": players,
+        "players_legacy":players_legacy,
         "division": max(set(divisions), key=divisions.count),
         "loses": loses,
     }
@@ -540,10 +549,12 @@ def team_details(team_id):
     conn.row_factory = sqlite3.Row
     team = get_team_stats(int(team_id))
     teams_mapping = get_all_teams_dict()
+    player_mapping = get_all_players_dict()
     if team is None:
         abort(404)
     return render_template('team.html', team=team, url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
-                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES,teams_mapping=teams_mapping)
+                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES,teams_mapping=teams_mapping,
+                           player_mapping=player_mapping)
 
 
 
