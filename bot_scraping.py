@@ -210,19 +210,19 @@ async def on_ready():
             df3 = extract_from_serie_raw(df3)
             df3['Division'] = '3'
 
-            c_channel = discord.utils.get(guild.text_channels, name='pl-game-reports')
-            messages = [{'message': message.content, 'date': message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2025, 8, 20, 8, 30), limit=1000)]
-            dfcpl = pd.DataFrame(messages)
-            dfcpl = extract_from_serie_raw(dfcpl)
-            dfcpl['Division'] = 'CPL'
+            # c_channel = discord.utils.get(guild.text_channels, name='pl-game-reports')
+            # messages = [{'message': message.content, 'date': message.created_at}  async for message in
+            #             c_channel.history(after=datetime.datetime(2025, 8, 20, 8, 30), limit=1000)]
+            # dfcpl = pd.DataFrame(messages)
+            # dfcpl = extract_from_serie_raw(dfcpl)
+            # dfcpl['Division'] = 'CPL'
 
             df = pd.concat([df1, df2, df3], axis=0)
             df['Season'] = 16
             df.to_csv(base_path + 'data_S16.csv', index=False)
 
-            dfcpl['Season'] = 5
-            dfcpl.to_csv(base_path + 'data_CPL5.csv', index=False)
+            # dfcpl['Season'] = 5
+            # dfcpl.to_csv(base_path + 'data_CPL5.csv', index=False)
 
     print('report scrapped')
 
