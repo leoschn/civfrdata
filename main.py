@@ -76,7 +76,7 @@ list_civ_url = [
     ("suleiman (kanuni)", 'Suleiman_29.webp', "Suleiman (Kanuni)"),
     ("soundiata keita", 'Sundiata_Keita_29.webp', "Sundiata Keita"),
     ("tamar", 'Tamar_29.webp', "Tamar"),
-    ("teddy roosevelt (bm)", 'Teddy_Roosevelt_29.webp', "Teddy Roosevelt (BM)"),
+    ("teddy roosevelt (bull moose)", 'Teddy_Roosevelt_29.webp', "Teddy Roosevelt (Bull Moose)"),
     ("teddy roosevelt (rough rider)", 'Teddy_Roosevelt_29_29.webp', "Teddy Roosevelt (Rough Rider)"),
     ("theodora", 'Theodora_29.webp', "Theodora"),
     ("tokugawa", 'Tokugawa_29.webp', "Tokugawa"),
@@ -90,7 +90,15 @@ list_civ_url = [
     ("yongle", 'Yongle_29.webp', "Yongle"),
     ("harald varangian", 'Harald_Hardrada_29_29.webp', "Harald Varangian"),
     ("cleopatra (ptolemaic)", 'Cleopatra_29_29.webp', "Cleopatra (Ptolemaic)"),
-    ("catherine de medici (manificence)", 'Catherine_de_Medici_29_29.webp', "Catherine de Medici (Magnificence)")
+    ("catherine de medici (manificence)", 'Catherine_de_Medici_29_29.webp', "Catherine de Medici (Magnificence)"),
+    ("trisong detsen",'Trisong.png',"Trisong Detsen"),
+    ("te kinich ii ",'TeKinich.png',"Te' K'inich II"),
+    ("olympias",'1Olympias.png',"Olympias"),
+    ("kiviuq",'K1iviuq.png',"Kiviuq"),
+    ("al-hasan ibn sulaiman",'1AlHasan.png',"Al-Hasan ibn Sulaiman"),
+    ("vercingetorix",'Vercingetorix1.png',"Vercingetorix"),
+    ("ahiram",'Ahiram2.png',"Ahiram"),
+    ("spearthrower",'Spearthrower.png',"Spearthrower"),
 ]
 
 list_map_url = [
@@ -100,7 +108,8 @@ list_map_url = [
     ("lakes", 'Map_Lakes_29.webp', "Lakes"),
     ("tilted axis", 'Map_Tilted_Axis_(Civ6).webp', "Tilted Axis"),
     ("primordial", 'Map_Primodial_29.webp', "Primordial"),
-    ("inland sea", 'Map_Inland_Sea_29.webp', "Inland Sea")
+    ("inland sea", 'Map_Inland_Sea_29.webp', "Inland Sea"),
+    ("pangaea est-west", 'Inland_Est_West-25322f67.png', "Pangaea Est-West ")
 ]
 
 # Dictionnaires pour les assets (chemin vers l'image)
@@ -116,13 +125,20 @@ for ident, fichier, _ in list_map_url:
 CIV_DISPLAY_NAMES = {ident: display for ident, _, display in list_civ_url}
 MAP_DISPLAY_NAMES = {ident: display for ident, _, display in list_map_url}
 
-def get_db_connection():
-    conn = sqlite3.connect('database_test.db')
+def get_db_connection(season):
+    print(season)
+    if season=='all' :
+        conn = sqlite3.connect('database_complete.db')
+    elif season ==15:
+        conn = sqlite3.connect('database_s15_legacy.db')
+    elif season ==16 :
+        conn = sqlite3.connect('database_s16.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_game(game_id):
-    conn = get_db_connection()
+
+def get_game(game_id,season='all'):
+    conn = get_db_connection(season)
     game = conn.execute('SELECT * FROM games WHERE id = ?',
                         (game_id,)).fetchone()
     conn.close()
@@ -133,17 +149,17 @@ def get_game(game_id):
 
 app = Flask(__name__)
 
-def get_all_players():
-    conn = get_db_connection()
+def get_all_players(season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
-    players = conn.execute('SELECT player_id,player_name FROM players ORDER BY LOWER(player_name) ASC').fetchall()
+    players = conn.execute('SELECT DISTINCT player_id,player_name FROM players ORDER BY LOWER(player_name) ASC').fetchall()
     conn.close()
     return players
 
-def get_all_teams():
-    conn = get_db_connection()
+def get_all_teams(season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
-    teams = conn.execute('SELECT team_id, team_name, division FROM teams ORDER BY LOWER(team_name) ASC').fetchall()
+    teams = conn.execute('SELECT DISTINCT team_id, team_name, division FROM teams ORDER BY LOWER(team_name) ASC').fetchall()
     conn.close()
     return teams
 
@@ -179,11 +195,10 @@ def get_civ_data_from_game(games,civs):
     for civ in civs :
         data = civ_data[civ].tolist()
         civ_data[civ] = {'win_rate': round(100*data[0]/max(1,data[3]),1),'lose_rate':round(100*data[1]/max(1,data[3]),1),'ban_rate':round(100*data[2]/total_game,1),'pick_rate':round(100*data[3]/total_game,1),'pick':data[3]}
-    print(civ_data,total_game)
     return civ_data,total_game
 
-def get_player_stats(player_id):
-    conn = get_db_connection()
+def get_player_stats(player_id,season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
 
    # Récupérer les informations du joueur dans la table players
@@ -211,7 +226,7 @@ def get_player_stats(player_id):
     # Pour chaque game dans lequel le joueur a joué
     for game_id in game_ids:
         game = conn.execute(
-            'SELECT * FROM games WHERE "index" = ?', (game_id,)
+            'SELECT * FROM games WHERE "id" = ?', (game_id,)
         ).fetchone()
         if game is None:
             continue
@@ -230,7 +245,10 @@ def get_player_stats(player_id):
                 if result == "win":
                     wins += 1
                 civilization = game["PickA" + pos].strip()
-                map_played = game["Map played"].strip()
+                if game["Map played"]:
+                    map_played = game["Map played"].strip()
+                else:
+                    map_played=None
 
                 # Récupérer le type et tour de victoire
                 v_type = game['Victory']
@@ -313,26 +331,26 @@ def get_player_stats(player_id):
         "maps": map_counts
     }
 
-def get_all_teams_dict():
-    conn = get_db_connection()
+def get_all_teams_dict(season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
-    teams = conn.execute('SELECT team_name,team_id from teams').fetchall()
+    teams = conn.execute('SELECT DISTINCT team_name,team_id from teams').fetchall()
     teams_dict={}
     for team in teams :
         teams_dict[team['team_id']]=team['team_name']
     return teams_dict
 
-def get_all_players_dict():
-    conn = get_db_connection()
+def get_all_players_dict(season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
-    teams = conn.execute('SELECT player_name,player_id from players').fetchall()
+    teams = conn.execute('SELECT DISTINCT player_name,player_id from players').fetchall()
     players_dict={}
     for player in teams :
         players_dict[player['player_id']]=player['player_name']
     return players_dict
 
-def get_team_stats(team_id):
-    conn = get_db_connection()
+def get_team_stats(team_id,season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
 
     # Récupérer tous les matchs où l'équipe est impliquée (Team A ou Team B)
@@ -369,13 +387,21 @@ def get_team_stats(team_id):
         map_played = game["Map played"].strip() if game["Map played"] else ""
         if map_played:
             maps_counts[map_played] = maps_counts.get(map_played, 0) + 1
-        id = game["index"]
+        id = game["id"]
 
         #Récupérer le type et tour de victoire
         v_type = game['Victory']
         v_turn = game['Victory Turn']
 
-
+        print({
+            "opponent": opponent,
+            "result": result,
+            "date": match_date,
+            "map": map_played,
+            "id": id,
+            'v_type' : v_type,
+            'v_turn' :v_turn
+        })
         matches.append({
             "opponent": opponent,
             "result": result,
@@ -392,9 +418,9 @@ def get_team_stats(team_id):
     loses = total_games - wins
     # Récupérer la liste des joueurs qui appartiennent à cette équipe depuis la table players
 
-    players = conn.execute('SELECT * FROM players WHERE team = ?', (team_id,)).fetchall()
-    players_legacy = conn.execute('SELECT * FROM team_players_legacy WHERE team_id = ?', (team_id,)).fetchall()
-    team_name = conn.execute('SELECT team_name FROM teams WHERE team_id = ?', (team_id,)).fetchall()[0]['team_name']
+    players = conn.execute('SELECT DISTINCT * FROM players WHERE team = ?', (team_id,)).fetchall()
+    players_legacy = conn.execute('SELECT DISTINCT * FROM team_players_legacy WHERE team_id = ?', (team_id,)).fetchall()
+    team_name = conn.execute('SELECT DISTINCT team_name FROM teams WHERE team_id = ?', (team_id,)).fetchall()[0]['team_name']
     conn.close()
 
 
@@ -413,8 +439,8 @@ def get_team_stats(team_id):
         "loses": loses,
     }
 
-def get_minimal_team_stats(team_id):
-    conn = get_db_connection()
+def get_minimal_team_stats(team_id,season='all'):
+    conn = get_db_connection(season)
     conn.row_factory = sqlite3.Row
 
     # Récupérer tous les matchs où l'équipe est impliquée (Team A ou Team B)
@@ -454,13 +480,14 @@ def get_minimal_team_stats(team_id):
         "total_games": total_games,
         "wins": wins,
         "loses": loses,
-        "win_rate": wins/total_games,
+        "win_rate": 0 if total_games==0 else wins/total_games,
     }
+
 
 
 @app.route('/')
 def landingpage():
-    teams = get_all_teams()
+    teams = get_all_teams(16)
     divisions = {}
 
     for team in teams:
@@ -475,7 +502,7 @@ def landingpage():
     # On s'assure que le nombre de victoires est un entier
 
         for team in team_list:
-            stats = get_minimal_team_stats(team['team_id'])
+            stats = get_minimal_team_stats(team['team_id'],16)
             team["wins"] = stats["wins"]
             team["loses"] = stats["loses"]
             team["total_games"] = stats["total_games"]
@@ -487,13 +514,47 @@ def landingpage():
         divisions[div] = sorted_teams
 
     # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
-    order = ['1', '2', '3a', '3b']
+    order = ['1', '2', '3']
+
+    return render_template('landingpage.html', divisions=divisions, order=order)
+
+
+@app.route('/s15')
+def landingpages15():
+    teams = get_all_teams(15)
+    divisions = {}
+
+    for team in teams:
+        team_dict = dict(team)  # Conversion de sqlite3.Row en dictionnaire
+        div = team_dict["division"]
+        if div not in divisions:
+            divisions[div] = []
+        divisions[div].append(team_dict)
+
+    # Pour chaque division, trier les équipes par nombre de victoires décroissant et attribuer un rang
+    for div, team_list in divisions.items():
+    # On s'assure que le nombre de victoires est un entier
+
+        for team in team_list:
+            stats = get_minimal_team_stats(team['team_id'],15)
+            team["wins"] = stats["wins"]
+            team["loses"] = stats["loses"]
+            team["total_games"] = stats["total_games"]
+
+        sorted_teams = sorted(team_list, key=lambda t: int(t.get("wins", 0)), reverse=True)
+        for rank, team in enumerate(sorted_teams, start=1):
+            team["ranking"] = rank
+
+        divisions[div] = sorted_teams
+
+    # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
+    order = ['1', '2', '3a','3b']
 
     return render_template('landingpage.html', divisions=divisions, order=order)
 
 @app.route('/data')
 def index():
-    conn = get_db_connection()
+    conn = get_db_connection('all')
     games = conn.execute('SELECT * FROM games ORDER BY id DESC').fetchall()
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT DISTINCT "team_id" FROM teams').fetchall()
@@ -545,7 +606,7 @@ def player_details(player_id):
 
 @app.route('/team/<team_id>')
 def team_details(team_id):
-    conn = get_db_connection()
+    conn = get_db_connection('all')
     conn.row_factory = sqlite3.Row
     team = get_team_stats(int(team_id))
     teams_mapping = get_all_teams_dict()
@@ -604,7 +665,7 @@ def search():
 
 @app.route('/data_civ')
 def index_civ():
-    conn = get_db_connection()
+    conn = get_db_connection('all')
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
     list_civs = [x[0] for x in list_civ_url]
@@ -625,7 +686,7 @@ def civ_data_search():
     civ = request.form.get('civ')
     map = request.form.get('map')
     div = request.form.get('div')
-    conn = get_db_connection()
+    conn = get_db_connection('all')
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
     list_civs = [x[0] for x in list_civ_url]
@@ -655,7 +716,7 @@ def civ_data_search():
 
 @app.route('/download_csv/<csv_type>', methods=['GET'])
 def download_csv(csv_type):
-    conn = get_db_connection()
+    conn = get_db_connection('all')
     cursor = conn.cursor()
     try:
         if csv_type == 'games':
