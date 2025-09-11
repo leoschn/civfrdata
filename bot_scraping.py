@@ -226,7 +226,7 @@ async def on_ready():
 
     print('report scrapped')
 
-    shutil.copyfile('database_s15_legacy.db', 'database_complete.db')
+    shutil.copyfile(base_path + 'database_s15_legacy.db', base_path + 'database_complete.db')
     conn = sqlite3.connect(base_path + 'database_complete.db')
 
     conn_new = sqlite3.connect(base_path + 'database_s16.db')
