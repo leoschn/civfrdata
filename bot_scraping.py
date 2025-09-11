@@ -6,7 +6,7 @@ import pandas as pd
 from unidecode import unidecode
 import sqlite3
 import re
-
+import shutil
 import os
 import sqlite3
 
@@ -38,19 +38,19 @@ def extract_from_string_raw(s, verbose=False):
     if 'vs' in splited_s[0+dec]:
 
         try :
-            data['Team A'] = int(re.findall(pattern_role, splited_s[0+dec].split('vs')[0])[0])
+            data['Team A'] = re.findall(pattern_role, splited_s[0+dec].split('vs')[0])[0]
         except:
             data['Team A']  = 'UNKNOWN'
 
 
         try :
-            data['Team B'] = int(re.findall(pattern_role, splited_s[0+dec].split('vs')[1])[0])
+            data['Team B'] = re.findall(pattern_role, splited_s[0+dec].split('vs')[1])[0]
         except:
             data['Team B'] = 'UNKNOWN'
 
         #extract winner
         try :
-            data['Winner'] = int(re.findall(pattern_role, splited_s[1+dec])[0])
+            data['Winner'] = re.findall(pattern_role, splited_s[1+dec])[0]
         except:
             data['Winner'] ='UNKNOWN'
 
@@ -105,7 +105,7 @@ def extract_from_string_raw(s, verbose=False):
 
             line = splited_s[4+dec].split(':')
             bans = line[1].split('/')
-            for i in range(14) :
+            for i in range(16) :
                 try :
                     data['Ban{0}'.format(i+1)]=bans[i].strip()
                 except :
@@ -126,11 +126,11 @@ def extract_from_string_raw(s, verbose=False):
             #extract player
         for i in range(4):
             try :
-                data['PlayerA{0}'.format(i+1)]=int(re.findall(pattern_user, splited_s[6+i+dec])[0])
+                data['PlayerA{0}'.format(i+1)]=re.findall(pattern_user, splited_s[6+i+dec])[0]
             except:
                 data['PlayerA{0}'.format(i+1)] = 'UNKNOWN'
             try:
-                data['PlayerB{0}'.format(i+1)] =int(re.findall(pattern_user, splited_s[11+i+dec])[0])
+                data['PlayerB{0}'.format(i+1)] =re.findall(pattern_user, splited_s[11+i+dec])[0]
             except:
                 data['PlayerB{0}'.format(i+1)] = 'UNKNOWN'
 
@@ -192,44 +192,49 @@ async def on_ready():
                 name = role.name
                 role_id_map[id]=name
 
+            c_channel = discord.utils.get(guild.text_channels, name='s16-reporting-d1')
+            messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,8,28,8,30),limit=1000)]
+            df1 = pd.DataFrame(messages)
+            df1 = extract_from_serie_raw(df1)
+            df1['Division'] = '1'
 
-            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d1')
-            # messages = [{'message':message.content,'date' : message.created_at} async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            # df1 = pd.DataFrame(messages)
-            # df1 = extract_from_serie_raw(df1)
-            # df1['Division'] = '1'
-            #
-            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d2')
-            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            # df2 = pd.DataFrame(messages)
-            # df2 = extract_from_serie_raw(df2)
-            # df2['Division'] = '2'
-            #
-            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3a')
-            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            # df3a= pd.DataFrame(messages)
-            # df3a = extract_from_serie_raw(df3a)
-            # df3a['Division'] = '3a'
-            #
-            # c_channel = discord.utils.get(guild.text_channels, name='s15-reporting-d3b')
-            # messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,1,17,14,30),limit=1000)]
-            # df3b = pd.DataFrame(messages)
-            # df3b = extract_from_serie_raw(df3b)
-            # df3b['Division'] = '3b'
-            #
-            #
-            # df = pd.concat([df1, df2, df3a, df3b], axis=0)
-            # df['Season'] = 15
-            # df.to_csv(base_path + 'data_S15_test.csv', index=False)
+            c_channel = discord.utils.get(guild.text_channels, name='s16-reporting-d2')
+            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,8,28,8,30),limit=1000)]
+            df2 = pd.DataFrame(messages)
+            df2 = extract_from_serie_raw(df2)
+            df2['Division'] = '2'
+
+            c_channel = discord.utils.get(guild.text_channels, name='s16-reporting-d3')
+            messages = [{'message':message.content,'date' : message.created_at}  async for message in c_channel.history(after=datetime.datetime(2025,8,28,8,30),limit=1000)]
+            df3= pd.DataFrame(messages)
+            df3 = extract_from_serie_raw(df3)
+            df3['Division'] = '3'
+
+            c_channel = discord.utils.get(guild.text_channels, name='pl-game-reports')
+            messages = [{'message': message.content, 'date': message.created_at}  async for message in
+                        c_channel.history(after=datetime.datetime(2025, 8, 20, 8, 30), limit=1000)]
+            dfcpl = pd.DataFrame(messages)
+            dfcpl = extract_from_serie_raw(dfcpl)
+            dfcpl['Division'] = 'CPL'
+
+            df = pd.concat([df1, df2, df3], axis=0)
+            df['Season'] = 16
+            df.to_csv(base_path + 'data_S16.csv', index=False)
+
+            dfcpl['Season'] = 5
+            dfcpl.to_csv(base_path + 'data_CPL5.csv', index=False)
 
     print('report scrapped')
 
-    conn = sqlite3.connect(base_path + 'database_test.db')
+    shutil.copyfile('database_s15_legacy.db', 'database_complete.db')
+    conn = sqlite3.connect(base_path + 'database_complete.db')
 
-    conn.execute("DROP TABLE IF EXISTS games")
+    conn_new = sqlite3.connect(base_path + 'database_s16.db')
+    data = pd.read_csv(base_path + 'data_S16.csv')
 
-    data = pd.read_csv(base_path + 'data_S15_test.csv')
-    data['id'] = data.index
+    data.index+=306
+    data['id']=data.index
+
 
     # Dictionnaire pour stocker les games uniques.
     # Clé : id du joueur.
@@ -239,18 +244,24 @@ async def on_ready():
     #   - "PlayerAX/playerBX"       : ID du joueur
     #   - "Season": numero de la saison
 
-    data.to_sql('games', conn,dtype={'Team A':'INTEGER','Team B':'INTEGER','Winner':'INTEGER','PlayerA1':'INTEGER'
+    cursor_new = conn_new.cursor()
+    cursor_new.execute("DROP TABLE IF EXISTS games")
+    data.to_sql('games', conn_new,dtype={'Team A':'INTEGER','Team B':'INTEGER','Winner':'INTEGER','PlayerA1':'INTEGER'
                                      ,'PlayerA2':'INTEGER','PlayerA3':'INTEGER','PlayerA4':'INTEGER','PlayerB1':'INTEGER'
                                      ,'PlayerB2':'INTEGER','PlayerB3':'INTEGER','PlayerB4':'INTEGER'})
 
-    conn.commit()
+    conn_new.commit()
 
-    conn.row_factory = sqlite3.Row  # Pour accéder aux colonnes par leur nom
+    conn_new.row_factory = sqlite3.Row  # Pour accéder aux colonnes par leur nom
+    cursor_new = conn_new.cursor()
     cursor = conn.cursor()
 
+    cursor.execute("ALTER TABLE games ADD Ban15 TINYTEXT")
+    cursor.execute("ALTER TABLE games ADD Ban16 TINYTEXT")
+
     # Récupération de toutes les lignes de la table "games"
-    cursor.execute("SELECT * FROM games")
-    games_data = cursor.fetchall()
+    cursor_new.execute("SELECT * FROM games")
+    games_data = cursor_new.fetchall()
 
     # Dictionnaire pour stocker les joueurs uniques.
     # Clé : id du joueur.
@@ -273,8 +284,14 @@ async def on_ready():
     row_name_player_A = ['PlayerA1', 'PlayerA2', 'PlayerA3', 'PlayerA4']
     row_name_player_B = ['PlayerB1', 'PlayerB2', 'PlayerB3', 'PlayerB4']
     for row in games_data:
-
-        game_id = row["index"]
+        cursor.execute("INSERT INTO games ('Team A','Team B',Winner,Victory,'Victory Turn','Map played','Map ban1','Map ban2','Map ban3','Map ban4','Map ban5','Map ban6',Ban1,Ban2,Ban3,Ban4,Ban5,Ban6,Ban7,Ban8,Ban9,Ban10,Ban11,Ban12,Ban13,Ban14,Ban15,Ban16,PickA1,PickB1,PickA2,PickB2,PickA3,PickB3,PickA4,PickB4,PlayerA1,PlayerB1,PlayerA2,PlayerB2,PlayerA3,PlayerB3,PlayerA4,PlayerB4,Date,Division,Season,id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       (row["Team A"],row["Team B"],row["Winner"],row["Victory"],row["Victory Turn"],row["Map played"],row["Map ban1"],row["Map ban2"],
+                                         row["Map ban3"],row["Map ban4"],row["Map ban5"],row["Map ban6"],row["Ban1"],row["Ban2"],row["Ban3"],row["Ban4"],
+                                         row["Ban5"],row["Ban6"],row["Ban7"],row["Ban8"],row["Ban9"],row["Ban10"],row["Ban11"],row["Ban12"],
+                                         row["Ban13"],row["Ban14"],row["Ban15"],row["Ban16"],row["PickA1"],row["PickB1"],row["PickA2"],row["PickB2"],
+                                         row["PickA3"],row["PickB3"],row["PickA4"],row["PickB4"],row["PlayerA1"],row["PlayerB1"],row["PlayerA2"],
+                                         row["PlayerB2"],row["PlayerA3"],row["PlayerB3"],row["PlayerA4"],row["PlayerB4"],row["Date"],row["Division"],row["Season"],row['id']))
+        game_id = row["id"]
         division = row["Division"]
         teamA = row["Team A"]
         teamB = row["Team B"]
@@ -343,16 +360,16 @@ async def on_ready():
             teams_dict[team]["players"].add(id)
 
     # Suppression des tables existantes si elles existent déjà
-    cursor.execute("DROP TABLE IF EXISTS players")
-    cursor.execute("DROP TABLE IF EXISTS player_games")
-    cursor.execute("DROP TABLE IF EXISTS teams")
-    cursor.execute("DROP TABLE IF EXISTS team_players")
-    cursor.execute("DROP TABLE IF EXISTS team_games")
-    cursor.execute("DROP TABLE IF EXISTS team_players_legacy")
+    cursor_new.execute("DROP TABLE IF EXISTS players")
+    cursor_new.execute("DROP TABLE IF EXISTS player_games")
+    cursor_new.execute("DROP TABLE IF EXISTS teams")
+    cursor_new.execute("DROP TABLE IF EXISTS team_players")
+    cursor_new.execute("DROP TABLE IF EXISTS team_games")
+    cursor_new.execute("DROP TABLE IF EXISTS team_players_legacy")
 
 
     # Création de la table players (pour les joueurs)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE players (
                 player_id INTEGER,
                 player_name TEXT NOT NULL,
@@ -361,7 +378,7 @@ async def on_ready():
         ''')
 
     # Création de la table player_games (liaison joueur - match)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE player_games (
                 player_id INTEGER,
                 game_id INTEGER,
@@ -370,7 +387,7 @@ async def on_ready():
         ''')
 
     # Création de la table teams (pour les équipes)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE teams (
                 team_id INTEGER PRIMARY KEY,
                 team_name TEXT,
@@ -379,7 +396,7 @@ async def on_ready():
         ''')
 
     # Création de la table team_players (liaison équipe - joueur)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE team_players (
                 team_id INTEGER,
                 player_id INTEGER,
@@ -389,7 +406,7 @@ async def on_ready():
         ''')
 
     # Création de la table team_players_legacy (liaison équipe - joueur)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE team_players_legacy (
                 team_id INTEGER,
                 player_id INTEGER,
@@ -399,7 +416,7 @@ async def on_ready():
         ''')
 
     # Création de la table team_games (liaison équipe - match)
-    cursor.execute('''
+    cursor_new.execute('''
             CREATE TABLE team_games (
                 team_id INTEGER,
                 game_id INTEGER,
@@ -411,20 +428,28 @@ async def on_ready():
     player_id_dict = {}
     for id, info in players_dict.items():
         team = info["current_team"]
-        cursor.execute("INSERT INTO players (player_id, player_name, team) VALUES (?,?, ?)", (id,player_id_map[id]['name'], team))
+        cursor.execute("REPLACE INTO players (player_id, player_name, team) VALUES (?,?, ?)", (id,player_id_map[id]['name'], team))
+        cursor_new.execute("INSERT INTO players (player_id, player_name, team) VALUES (?,?, ?)",
+                       (id, player_id_map[id]['name'], team))
         for game_id in info["games"]:
             cursor.execute("INSERT INTO player_games (player_id, game_id) VALUES (?, ?)", (id, int(game_id)))
+            cursor_new.execute("INSERT INTO player_games (player_id, game_id) VALUES (?, ?)", (id, int(game_id)))
+
 
     # Insertion des équipes dans la table teams et dans les tables de liaison
     for team_id, info in teams_dict.items():
         if team_id!='UNKNOWN':
             team_id = int(team_id)
             division = info.get("division", "")
-            cursor.execute("INSERT INTO teams (team_id, team_name, division) VALUES (?, ?, ?)", (team_id, role_id_map[team_id], division))
+            cursor.execute("REPLACE INTO teams (team_id, team_name, division) VALUES (?, ?, ?)", (team_id, role_id_map[team_id], division))
+            cursor_new.execute("REPLACE INTO teams (team_id, team_name, division) VALUES (?, ?, ?)",
+                           (team_id, role_id_map[team_id], division))
             for game_id in info["games"]:
                 cursor.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
+                cursor_new.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
             for id in info["players"]:
                 cursor.execute("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)", (team_id, id))
+                cursor_new.execute("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)", (team_id, id))
 
     for team_id, info in teams_dict_legacy.items():
         if team_id != 'UNKNOWN':
@@ -432,11 +457,16 @@ async def on_ready():
             for id in info["players"]:
                 cursor.execute("INSERT INTO team_players_legacy (team_id, player_id) VALUES (?, ?)",
                            (team_id, id))
+                cursor_new.execute("INSERT INTO team_players_legacy (team_id, player_id) VALUES (?, ?)",
+                               (team_id, id))
 
     conn.commit()
+    conn_new.commit()
+    conn_new.close()
     conn.close()
     print(f"Nouvelles tables ajoutées dans database.db' : {len(players_dict)} joueurs et {len(teams_dict)} équipes.")
-    conn.close()
+
+
 
     await client.close()
 
