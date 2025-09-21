@@ -110,9 +110,9 @@ list_map_url = [
     ("tilted axis", 'Map_Tilted_Axis_(Civ6).webp', "Tilted Axis"),
     ("primordial", 'Map_Primodial_29.webp', "Primordial"),
     ("inland sea", 'Map_Inland_Sea_29.webp', "Inland Sea"),
-    ("pangaea est-west", 'Inland_Est_West-25322f67.png', "Pangaea Est-West "),
+    ("pangaea est-west", 'Pangaea_Est_West-703c505f.png', "Pangaea Est-West "),
     ("inland est-west","Inland_Est_West-25322f67.png","Inland Est-West"),
-    ("inland sea est-west","Inland_Est_West-25322f67.png","Inland Est-West")
+    ("inland sea east-west","Inland_Est_West-25322f67.png","Inland Est-West")
 ]
 
 # Dictionnaires pour les assets (chemin vers l'image)
