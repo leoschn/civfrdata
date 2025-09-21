@@ -51,40 +51,53 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- jQuery UI pour l'autocomplétion -->
+<!-- jQuery UI for autocomplete -->
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
 <script>
 $(function() {
-  var availablePlayers = [
-    {% for player in players %}
-      "{{ player['player_name'] }}",
-    {% endfor %}
-  ];
+    // Build arrays safely with |tojson
+    var availablePlayers = [
+        {% for player in players %}
+            {{ player['player_name']|tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-      var playerMap = {
-    {% for player in players %}
-      "{{ player['player_name'] }}": "{{ player['player_id'] }}",
-    {% endfor %}
-  };
-  
-  // Active l'autocomplétion après avoir tapé 1 caractère
-  $("#playerQuery").autocomplete({
-    source: availablePlayers,
-    minLength: 1
-  });
-  
-  // Redirection vers la page du joueur lors de la soumission du formulaire
-  $("#playerSearchForm").on("submit", function(e) {
-    e.preventDefault();
-    var query = $("#playerQuery").val().trim();
-    var playerId = playerMap[query];
-    if(query) {
-      var url = "{{ url_for('player_details', player_id=0) }}".replace(0, encodeURIComponent(playerId));
-      window.location.href = url;
-    }
-  });
+    var playerMap = {
+        {% for player in players %}
+            {{ player['player_name']|tojson }}: {{ player['player_id']|tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    // Autocomplete setup
+    $("#playerQuery").autocomplete({
+        source: availablePlayers,
+        minLength: 1,
+        select: function(event, ui) {
+            // Normalize the string in case of Unicode combining chars
+            var playerName = ui.item.value.normalize("NFC");
+            var playerId = playerMap[playerName];
+            if (playerId) {
+                var url = "{{ url_for('player_details', player_id=0) }}".replace("0", encodeURIComponent(playerId));
+                window.location.href = url;
+            }
+        }
+    });
+
+    // Form submit handler (for manual input or Enter key)
+    $("#playerSearchForm").on("submit", function(e) {
+        e.preventDefault();
+        var query = $("#playerQuery").val().trim().normalize("NFC"); // normalize Unicode
+        var playerId = playerMap[query];
+        if (playerId) {
+            var url = "{{ url_for('player_details', player_id=0) }}".replace("0", encodeURIComponent(playerId));
+            window.location.href = url;
+        } else {
+            alert("Aucun joueur trouvé avec ce nom.");
+        }
+    });
 });
 </script>
 {% endblock %}

@@ -102,7 +102,8 @@ list_civ_url = [
 ]
 
 list_map_url = [
-    ("pangaea standard", 'Map_Pangaea_29.webp', "Pangaea Standard"),
+    ("pangaea standard", 'Pangaea_Standard-cb7cdd6b.png', "Pangaea Standard"),
+    ("pangaea classic", 'Pangaea_Classic-4f1cfc97.png', "Pangaea Classic"),
     ("seven seas", 'Map_Seven_Seas_29.webp', "Seven Seas"),
     ("rich highlands", 'Map_Highlands_29.webp', "Rich Highlands"),
     ("lakes", 'Map_Lakes_29.webp', "Lakes"),
@@ -126,13 +127,14 @@ CIV_DISPLAY_NAMES = {ident: display for ident, _, display in list_civ_url}
 MAP_DISPLAY_NAMES = {ident: display for ident, _, display in list_map_url}
 
 def get_db_connection(season):
-    print(season)
     if season=='all' :
         conn = sqlite3.connect('database_complete.db')
     elif season ==15:
         conn = sqlite3.connect('database_s15_legacy.db')
     elif season ==16 :
         conn = sqlite3.connect('database_s16.db')
+    elif season =='cpl5' :
+        conn = sqlite3.connect('database_CPL5.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -209,7 +211,8 @@ def get_player_stats(player_id,season='all'):
         return None  # Le joueur n'existe pas
 
     player_name = player_row['player_name']
-    team = player_row['team']
+    team_cpl = player_row['team_cpl']
+    team_civfr = player_row['team_civfr']
 
     # Récupérer les game_ids depuis la table de liaison player_games pour ce player_id
     game_rows = conn.execute(
@@ -322,7 +325,8 @@ def get_player_stats(player_id,season='all'):
     return {
         "player_id": player_id,
         "pseudo": player_name,
-        "team": team,
+        "team_civfr": team_civfr,
+        "team_cpl": team_cpl,
         "matches": matches,
         "total_games": total_games,
         "wins": wins,
@@ -363,10 +367,14 @@ def get_team_stats(team_id,season='all'):
     matches = []
     wins = 0
     maps_counts = {}
-    divisions =[]
-    for game in matches_data:
+    division = None
+    date = datetime(1, 1, 1)
 
-        divisions.append(game["Division"])
+    for game in matches_data:
+        league = game['League']
+        if datetime.strptime(game['Date'], '%d/%m/%y')>date:
+            date = datetime.strptime(game['Date'], '%d/%m/%y')
+            division = game["Division"]
         # On suppose que la colonne "Date" existe et contient la date du match.
         match_date = game["Date"]
         # Identifier de quel côté se trouve l'équipe et déterminer l'opposant et le résultat.
@@ -392,16 +400,6 @@ def get_team_stats(team_id,season='all'):
         #Récupérer le type et tour de victoire
         v_type = game['Victory']
         v_turn = game['Victory Turn']
-
-        print({
-            "opponent": opponent,
-            "result": result,
-            "date": match_date,
-            "map": map_played,
-            "id": id,
-            'v_type' : v_type,
-            'v_turn' :v_turn
-        })
         matches.append({
             "opponent": opponent,
             "result": result,
@@ -417,8 +415,10 @@ def get_team_stats(team_id,season='all'):
     winrate = wins / total_games if total_games > 0 else 0.0
     loses = total_games - wins
     # Récupérer la liste des joueurs qui appartiennent à cette équipe depuis la table players
-
-    players = conn.execute('SELECT DISTINCT * FROM players WHERE team = ?', (team_id,)).fetchall()
+    if league =='cpl':
+        players = conn.execute('SELECT DISTINCT * FROM players WHERE team_cpl = ?', (team_id,)).fetchall()
+    elif league =='civfr':
+        players = conn.execute('SELECT DISTINCT * FROM players WHERE team_civfr = ?', (team_id,)).fetchall()
     players_legacy = conn.execute('SELECT DISTINCT * FROM team_players_legacy WHERE team_id = ?', (team_id,)).fetchall()
     team_name = conn.execute('SELECT DISTINCT team_name FROM teams WHERE team_id = ?', (team_id,)).fetchall()[0]['team_name']
     conn.close()
@@ -435,7 +435,7 @@ def get_team_stats(team_id,season='all'):
         "maps": maps_counts,
         "players": players,
         "players_legacy":players_legacy,
-        "division": max(set(divisions), key=divisions.count),
+        "division": division,
         "loses": loses,
     }
 
@@ -552,6 +552,39 @@ def landingpages15():
 
     return render_template('landingpage.html', divisions=divisions, order=order)
 
+@app.route('/cpl5')
+def landingpagescpl5():
+    teams = get_all_teams('cpl5')
+    divisions = {}
+    for team in teams:
+        team_dict = dict(team)  # Conversion de sqlite3.Row en dictionnaire
+        div = team_dict["division"]
+        if div not in divisions:
+            divisions[div] = []
+        divisions[div].append(team_dict)
+
+    # Pour chaque division, trier les équipes par nombre de victoires décroissant et attribuer un rang
+    for div, team_list in divisions.items():
+    # On s'assure que le nombre de victoires est un entier
+
+        for team in team_list:
+            stats = get_minimal_team_stats(team['team_id'],'cpl5')
+            team["wins"] = stats["wins"]
+            team["loses"] = stats["loses"]
+            team["total_games"] = stats["total_games"]
+
+        sorted_teams = sorted(team_list, key=lambda t: int(t.get("wins", 0)), reverse=True)
+        for rank, team in enumerate(sorted_teams, start=1):
+            team["ranking"] = rank
+
+        divisions[div] = sorted_teams
+
+    # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
+    order = ['cpl_1', 'cpl_2', 'cpl_3',]
+
+    return render_template('landingpage.html', divisions=divisions, order=order)
+
+
 @app.route('/data')
 def index():
     conn = get_db_connection('all')
@@ -561,6 +594,7 @@ def index():
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
     list_player = conn.execute('SELECT "player_id" FROM players').fetchall()
     list_season = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
+    list_league = conn.execute('SELECT DISTINCT "League" FROM games').fetchall()
     player_mapping = get_all_players_dict()
     team_mapping=get_all_teams_dict()
     conn.close()
@@ -569,7 +603,7 @@ def index():
     return render_template('index_search_bar.html', games=games, url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
                            team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player,
-                           list_season=list_season)
+                           list_season=list_season,list_league=list_league)
 
 @app.route('/test')
 def test():
@@ -587,6 +621,10 @@ def game(game_id):
 @app.route('/player')
 def player_list():
     players = get_all_players()
+    players = [
+        {"player_id": str(row["player_id"]), "player_name": row["player_name"]}
+        for row in players
+    ]
     return render_template('player_list.html', players=players)
 
 @app.route('/team')
@@ -628,12 +666,15 @@ def search():
     map = request.form.get('map')
     div = request.form.get('div')
     season = request.form.get('season')
-    conn = get_db_connection()
+    league = request.form.get('league')
+    conn = get_db_connection('all')
+
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
     list_player = conn.execute('SELECT "player_id" FROM players').fetchall()
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
     list_season = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
+    list_league = conn.execute('SELECT DISTINCT "League" FROM games').fetchall()
 
     if team_name != '"Team A"':
         team_id = conn.execute('SELECT team_id FROM teams WHERE team_id = ?', (team_name,)).fetchone()['team_id']
@@ -653,14 +694,18 @@ def search():
     if season != '"Season"':
         season = season
 
+    if league != '"League"':
+        league = "'"+league+"'"
+
     #use fstring to pass either column name or value as variable
-    games = conn.execute(f'SELECT * FROM games WHERE ("Season" = {season}) AND ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("PlayerA1" = {player_id} OR "PlayerA2" = {player_id} OR "PlayerA3" = {player_id} OR "PlayerA4" = {player_id} OR "PlayerB1" = {player_id} OR "PlayerB2" = {player_id} OR "PlayerB3" = {player_id} OR "PlayerB4" = {player_id})')
+    print(f'SELECT * FROM games WHERE ("League" = {league}) AND ("Season" = {season}) AND ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("PlayerA1" = {player_id} OR "PlayerA2" = {player_id} OR "PlayerA3" = {player_id} OR "PlayerA4" = {player_id} OR "PlayerB1" = {player_id} OR "PlayerB2" = {player_id} OR "PlayerB3" = {player_id} OR "PlayerB4" = {player_id})')
+    games = conn.execute(f'SELECT * FROM games WHERE ("League" = {league}) AND ("Season" = {season}) AND ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("PlayerA1" = {player_id} OR "PlayerA2" = {player_id} OR "PlayerA3" = {player_id} OR "PlayerA4" = {player_id} OR "PlayerB1" = {player_id} OR "PlayerB2" = {player_id} OR "PlayerB3" = {player_id} OR "PlayerB4" = {player_id})')
     games = sorted(games, key=lambda game: datetime.strptime(game['Date'], '%d/%m/%y'), reverse=True)
     conn.close()
     return render_template('index_search_bar.html', games=games,url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
                            team_mapping=team_mapping,player_mapping=player_mapping,list_player=list_player,
-                           list_season=list_season)
+                           list_season=list_season,list_league=list_league)
 
 
 @app.route('/data_civ')

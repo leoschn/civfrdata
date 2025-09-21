@@ -33,26 +33,29 @@
                      href="{{ url_for('landingpages15') }}">Squadron S15</a></li>
               <li><a class="btn btn-outline-primary w-100 rounded-pill my-1"
                      href="{{ url_for('landingpage') }}">Squadron S16</a></li>
-              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href=#>Premier League</a></li>
+              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href="{{ url_for('landingpagescpl5') }}">Premier League</a></li>
             </ul>
           </li>
 
-          <li class="nav-item dropdown mx-2">
-            <a
-                    class="btn btn-primary btn-lg rounded-pill shadow-sm dropdown-toggle"
-                    href="#"
-                    id="gamesDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-            >
-              Games
-            </a>
-            <ul class="dropdown-menu p-2 border-0 shadow-sm" style="background: linear-gradient(135deg, #2c3e50, #000000);" aria-labelledby="playersDropdown">
-              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href="{{ url_for('index') }}">Squadron
-              </a></li>
-              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href=#>Premier League</a></li>
-            </ul>
+<!--          <li class="nav-item dropdown mx-2">-->
+<!--            <a-->
+<!--                    class="btn btn-primary btn-lg rounded-pill shadow-sm dropdown-toggle"-->
+<!--                    href="#"-->
+<!--                    id="gamesDropdown"-->
+<!--                    role="button"-->
+<!--                    data-bs-toggle="dropdown"-->
+<!--                    aria-expanded="false"-->
+<!--            >-->
+<!--              Games-->
+<!--            </a>-->
+<!--            <ul class="dropdown-menu p-2 border-0 shadow-sm" style="background: linear-gradient(135deg, #2c3e50, #000000);" aria-labelledby="playersDropdown">-->
+<!--              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href="{{ url_for('index') }}">Squadron-->
+<!--              </a></li>-->
+<!--              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href=#>Premier League</a></li>-->
+<!--            </ul>-->
+<!--          </li>-->
+          <li class="nav-item mx-2">
+            <a class="btn btn-primary btn-lg rounded-pill shadow-sm" href="{{ url_for('index') }}">Games</a>
           </li>
           <li class="nav-item mx-2">
             <a class="btn btn-primary btn-lg rounded-pill shadow-sm" href="{{ url_for('player_list') }}">Players</a>

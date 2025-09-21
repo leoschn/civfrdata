@@ -15,13 +15,22 @@
         <div class="card-body">
             <h4 class="card-title"> {{ player.player_name }} </h4>
             <p class="card-text">
-                <strong>Team:</strong>
-                {% if team_mapping[player.team] %}
-                <a href="{{ url_for('team_details', team_id=player.team) }}" class="text-info">
-                    {{ team_mapping[player.team] }}
+                <strong>Team Civfr:</strong>
+                {% if team_mapping[player.team_civfr] %}
+                <a href="{{ url_for('team_details', team_id=player.team_civfr) }}" class="text-info">
+                    {{ team_mapping[player.team_civfr] }}
                 </a><br>
                 {%else%}
                 Sans équipe actuellement
+                </a><br>
+                {% endif %}
+                <strong>Team CPL:</strong>
+                {% if team_mapping[player.team_cpl] %}
+                <a href="{{ url_for('team_details', team_id=player.team_cpl) }}" class="text-info">
+                    {{ team_mapping[player.team_cpl] }}
+                </a><br>
+                {%else%}
+                No team currently
                 </a><br>
                 {% endif %}
                 <strong>Total Games:</strong> {{ player.total_games }}
