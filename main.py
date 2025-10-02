@@ -92,7 +92,7 @@ list_civ_url = [
     ("cleopatra (ptolemaic)", 'Cleopatra_29_29.webp', "Cleopatra (Ptolemaic)"),
     ("catherine de medici (manificence)", 'Catherine_de_Medici_29_29.webp', "Catherine de Medici (Magnificence)"),
     ("trisong detsen",'Trisong.png',"Trisong Detsen"),
-    ("te kinich ii ",'TeKinich.png',"Te' K'inich II"),
+    ("te' k'inich ii",'TeKinich.png',"Te' K'inich II"),
     ("olympias",'1Olympias.png',"Olympias"),
     ("kiviuq",'K1iviuq.png',"Kiviuq"),
     ("al-hasan ibn sulaiman",'1AlHasan.png',"Al-Hasan ibn Sulaiman"),
