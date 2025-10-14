@@ -269,7 +269,7 @@ async def on_ready():
 
     data_cpl = pd.read_csv(base_path + 'data_CPL5.csv')
     conn_cpl = sqlite3.connect(base_path + 'database_CPL5.db')
-    data_cpl.index += 306 + nb_game_s16
+    data_cpl.index += 306 + 1500  #au cas ou bcp de games CPL (temporary fix)
     data_cpl['id']=data_cpl.index
 
     # Dictionnaire pour stocker les games uniques.
