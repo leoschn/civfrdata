@@ -717,13 +717,14 @@ def index_civ():
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
     list_civs = [x[0] for x in list_civ_url]
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
+    list_seasons = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
     team_mapping=get_all_teams_dict()
     conn.close()
 
 
     return render_template('civ_data_index.html', url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
-                           team_mapping=team_mapping, list_civs=list_civs)
+                           team_mapping=team_mapping, list_civs=list_civs, list_seasons=list_seasons)
 
 
 @app.route('/civ_data_search', methods=['GET', 'POST'])
@@ -733,9 +734,11 @@ def civ_data_search():
     civ = request.form.get('civ')
     map = request.form.get('map')
     div = request.form.get('div')
+    season = request.form.get('season')
     conn = get_db_connection('all')
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
+    list_seasons = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
     list_civs = [x[0] for x in list_civ_url]
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
 
@@ -752,14 +755,18 @@ def civ_data_search():
 
     if div != '"Division"':
         div = "'"+div+"'"
+
+    if season != '"Season"':
+        season = "'"+season+"'"
+
     #use fstring to pass either column name or value as variable
-    games = conn.execute(f'SELECT * FROM games WHERE ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) ').fetchall()
+    games = conn.execute(f'SELECT * FROM games WHERE ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("Season" = {season} ) ').fetchall()
     #compute stats
     civ_data,total_game = get_civ_data_from_game(games,civs)
     conn.close()
     return render_template('civ_data.html', url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
-                           team_mapping=team_mapping,civ_data = civ_data,total_game=total_game,list_civs=list_civs)
+                           team_mapping=team_mapping,civ_data = civ_data,total_game=total_game,list_civs=list_civs, list_seasons=list_seasons )
 
 @app.route('/download_csv/<csv_type>', methods=['GET'])
 def download_csv(csv_type):

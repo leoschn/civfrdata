@@ -31,6 +31,12 @@
             <option value="{{ name['Division'] }}">{{ name['Division'] }}</option>
           {% endfor %}
         </select>
+        <select name="season" class="form-select rounded-pill me-2" aria-label="Select Player">
+          <option selected value='"Season"'>All seasons</option>
+          {% for name in list_seasons %}
+            <option value="{{name['Season'] }}">{{ name['Season'] }}</option>
+          {% endfor %}
+        </select>
 
         <!-- Bouton de validation ajouté pour lancer la recherche -->
         <button type="submit" class="btn btn-light rounded-pill ms-2">Search</button>
