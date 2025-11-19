@@ -129,7 +129,12 @@ CIV_DISPLAY_NAMES = {ident: display for ident, _, display in list_civ_url}
 MAP_DISPLAY_NAMES = {ident: display for ident, _, display in list_map_url}
 
 def get_db_connection(season):
-    if season=='all' :
+    # Mode TEST - utilisez database_test.db pour tous les accès
+    USE_TEST_DB = False
+    
+    if USE_TEST_DB:
+        conn = sqlite3.connect('database_test.db')
+    elif season=='all' :
         conn = sqlite3.connect('database_complete.db')
     elif season ==15:
         conn = sqlite3.connect('database_s15_legacy.db')
@@ -167,38 +172,93 @@ def get_all_teams(season='all'):
     conn.close()
     return teams
 
-def get_civ_data_from_game(games,civs):
+def get_civ_data_from_game(games,civs, team_id):
+    # team_id = "Team A" si on est en mode all teams
+    #sinon on est dans la vue d'une seule équipe et on ne doit compter les victoires/défaites de chaque civilisation que pour cette équipe
     civ_data = {}
     total_game = len(games)
     for civ in civs :
-        civ_data[civ]=np.array([0,0,0,0]) #{'win':0,'lose':0,'ban':0,'pick':0}
+        civ_data[civ]=np.array([0,0,0,0,0,0,0]) #{'win':0,'lose':0,'ban':0,'pick':0, 'ban_enemy_team':0,'pick_enemy_team':0,'error':0}
 
-    for game in games :
+        
+    # Team A : toutes les équipes, sinon team_id : équipe spécifique
+    for game in games : # games où l'équipe a participé ou toutes les games si team_id = "Team A"
         for pick in ['PickA1','PickA2','PickA3','PickA4']:
             if game[pick] in civs:
-                if game['Winner'] == game['Team A']:
-                    civ_data[game[pick]]=civ_data[game[pick]]+[1,0,0,1]
-                elif game['Winner'] == game['Team B']:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 1, 0, 1]
-                else:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1]
+                if game['Winner'] == game['Team A']: #victoire de l'équipe A et on check les picks de l'équipe A --> Victoire pour la civ
+                    if(team_id == '"Team A"' or game['Team A'] == team_id): # on est en mode all ou on est dans la vue de l'équipe A (gagnante)
+                        civ_data[game[pick]]=civ_data[game[pick]]+[1,0,0,1,0,0,0]
+                    else: # on est en mode vue de l'équipe A, on track les picks de l'autre équipe
+                        civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 0, 1, 0]
+                elif game['Winner'] == game['Team B']: #victoire de l'équipe B et on check les picks de l'équipe A --> Défaite pour la civ
+                    if(team_id == '"Team A"' or game['Team A'] == team_id): 
+                        civ_data[game[pick]] = civ_data[game[pick]] + [0, 1, 0, 1, 0, 0, 0]
+                    else: 
+                        civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 0, 1, 0]
+                else: #match nul ou erreur dans les datas
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1, 0, 0, 1]
 
         for pick in ['PickB1','PickB2','PickB3','PickB4']:
             if game[pick] in civs:
                 if game['Winner'] == game['Team A']:
-                    civ_data[game[pick]]=civ_data[game[pick]] + [0, 1, 0, 1]
+                    if(team_id == '"Team A"' or game['Team B'] == team_id):
+                        civ_data[game[pick]]=civ_data[game[pick]] + [0, 1, 0, 1, 0, 0, 0]
+                    else:
+                        civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 0, 1, 0]
                 elif game['Winner'] == game['Team B']:
-                    civ_data[game[pick]] = civ_data[game[pick]]  +[1,0,0,1]
+                    if(team_id == '"Team A"' or game['Team B'] == team_id):
+                        civ_data[game[pick]] = civ_data[game[pick]]  +[1,0,0,1,0,0,0]
+                    else:
+                        civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 0, 1, 0]
                 else:
-                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1]
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 1 ,0,0,1]
+        
+        #Si 10 ban : la team 1 a ban : le 1, 3, 5, 8 et 10
+        #        la team 2 a ban : le 2, 4, 6, 9 et 11
+        #Si 14 ban : la team 1 a ban : le 1, 3, 5, 7 ,9, 12 et 14
+        #        la team 2 a ban : le 2, 4, 6, 8, 10, 11 et 13
+        #Si 16 ban : la team 1 a ban : le 1, 3, 5, 7 ,9, 12, 14 et 16
+        #        la team 2 a ban : le 2, 4, 6, 8, 10, 11, 13 et 15
+        if(game['Ban16'] != 0): #16 bans
+            banListTeamA = ['Ban1','Ban3','Ban5','Ban7','Ban9','Ban12','Ban14','Ban16']
+            banListTeamB = ['Ban2','Ban4','Ban6','Ban8','Ban10','Ban11','Ban13','Ban15']
+        elif(game['Ban14'] != 0): #14 bans
+            banListTeamA = ['Ban1','Ban3','Ban5','Ban7','Ban9','Ban12','Ban14']
+            banListTeamB = ['Ban2','Ban4','Ban6','Ban8','Ban10','Ban11','Ban13']
+        else : #10 bans
+            banListTeamA = ['Ban1','Ban3','Ban5','Ban8','Ban10']
+            banListTeamB = ['Ban2','Ban4','Ban6','Ban9','Ban11']
 
-        for pick in ['Ban1','Ban2','Ban3','Ban4','Ban5','Ban6','Ban7','Ban8','Ban9','Ban10','Ban11','Ban12']:
+        
+        for pick in banListTeamA:
             if game[pick] in civs:
-                civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 1, 0]
+                if(team_id == '"Team A"' or game['Team A'] == team_id):
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 1, 0, 0, 0, 0]
+                else: #l'équipe adverse a ban cette civ
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 1, 0, 0]
+
+        for pick in banListTeamB:
+            if game[pick] in civs:
+                if(team_id == '"Team A"' or game['Team B'] == team_id):
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 1, 0 , 0, 0, 0]
+                else: #l'équipe adverse a ban cette civ
+                    civ_data[game[pick]] = civ_data[game[pick]] + [0, 0, 0, 0, 1, 0, 0]
+
+        
 
     for civ in civs :
         data = civ_data[civ].tolist()
-        civ_data[civ] = {'win_rate': round(100*data[0]/max(1,data[3]),1),'lose_rate':round(100*data[1]/max(1,data[3]),1),'ban_rate':round(100*data[2]/total_game,1),'pick_rate':round(100*data[3]/total_game,1),'pick':data[3]}
+        total_games_safe = max(1, total_game)  # Éviter division par zéro
+        civ_data[civ] = {
+            'win_rate': round(100*data[0]/max(1,data[3]),1),
+            'lose_rate': round(100*data[1]/max(1,data[3]),1),
+            'ban_rate': round(100*data[2]/total_games_safe,1),
+            'pick_rate': round(100*data[3]/total_games_safe,1),
+            'ban_rate_enemy_team': round(100*data[4]/total_games_safe,1), #Dans le cas où on regarde pour une équipe, on track les infos de l'adversaire
+            'pick_rate_enemy_team': round(100*data[5]/total_games_safe,1),
+            'error_rate': round(100*data[6]/max(1,data[3]),1),
+            'pick': data[3]
+        }
     return civ_data,total_game
 
 def get_player_stats(player_id,season='all'):
@@ -344,6 +404,9 @@ def get_all_teams_dict(season='all'):
     teams_dict={}
     for team in teams :
         teams_dict[team['team_id']]=team['team_name']
+    ## ajouter l'entrée pour tous les équipes, on obtient 0 quand on fera un |int sur une chaine de caractères
+    teams_dict[0]='All Teams'
+    conn.close()
     return teams_dict
 
 def get_all_players_dict(season='all'):
@@ -735,6 +798,8 @@ def civ_data_search():
     map = request.form.get('map')
     div = request.form.get('div')
     season = request.form.get('season')
+    all_civs_toggle = request.form.get("all_civs_toggle")  # sera "true" si coché, sinon None
+    show_all_civs = bool(all_civs_toggle)           # converti en booléen
     conn = get_db_connection('all')
     list_map = conn.execute('SELECT DISTINCT "Map played" FROM games').fetchall()
     list_team = conn.execute('SELECT "team_id" FROM teams').fetchall()
@@ -742,31 +807,60 @@ def civ_data_search():
     list_civs = [x[0] for x in list_civ_url]
     list_div = conn.execute('SELECT DISTINCT "Division" FROM games').fetchall()
 
+    if team_name == 'All Teams': #on remap comme dans la bdd pour assurer la compatibilité avec ce qui était fait avant
+        team_name = '"Team A"'
     if team_name != '"Team A"':
         team_id = conn.execute('SELECT team_id FROM teams WHERE team_id = ?', (team_name,)).fetchone()['team_id']
     else:
         team_id = team_name
-    if civ =='All civs':
+
+    if civ =='All civs':#on remap comme dans la bdd pour assurer la compatibilité avec ce qui était fait avant
         civs = list_civs
     else:
         civs = [civ]
+
+    if map == 'All Maps':#on remap comme dans la bdd pour assurer la compatibilité avec ce qui était fait avant
+        map = '"Map played"'
     if map != '"Map played"':
         map = "'"+map+"'"
 
+    if div == 'All Divisions':#on remap comme dans la bdd pour assurer la compatibilité avec ce qui était fait avant
+        div = '"Division"'
     if div != '"Division"':
         div = "'"+div+"'"
 
+    if season == 'All Seasons':#on remap comme dans la bdd pour assurer la compatibilité avec ce qui était fait avant
+        season = '"Season"'
     if season != '"Season"':
         season = "'"+season+"'"
-
+        
     #use fstring to pass either column name or value as variable
     games = conn.execute(f'SELECT * FROM games WHERE ("Team A" = {team_id} OR "Team B" = {team_id}) AND ("Map played" = {map} ) AND ("Division" = {div} ) AND ("Season" = {season} ) ').fetchall()
     #compute stats
-    civ_data,total_game = get_civ_data_from_game(games,civs)
+    civ_data,total_game = get_civ_data_from_game(games,civs, team_id)
     conn.close()
-    return render_template('civ_data.html', url_civ=CIV_ASSETS_NAMES,
-                           url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
-                           team_mapping=team_mapping,civ_data = civ_data,total_game=total_game,list_civs=list_civs, list_seasons=list_seasons )
+    
+    #print(season + ' ' + div + ' ' + map + ' ' + civ)
+    # Passer les valeurs actuelles des filtres au template
+    
+    return render_template('civ_data.html', 
+                           url_civ=CIV_ASSETS_NAMES,
+                           url_map=MAP_ASSETS_NAME, 
+                           list_map=list_map, 
+                           list_team=list_team, 
+                           list_div=list_div,
+                           team_mapping=team_mapping,
+                           civ_data=civ_data,
+                           total_game=total_game,
+                           list_civs=list_civs, 
+                           list_seasons=list_seasons,
+                           # Filtres actuels
+                           selected_team=team_name if team_name != '"Team A"' else 'All Teams',
+                           selected_civ=civ,
+                           selected_map=map.strip("'") if map != '"Map played"' else 'All Maps',
+                           selected_div=div.strip("'") if div != '"Division"' else 'All Divisions',
+                           selected_season=season.strip("'") if season != '"Season"' else 'All Seasons',
+                           show_all_civs=show_all_civs)
 
 @app.route('/download_csv/<csv_type>', methods=['GET'])
 def download_csv(csv_type):
@@ -892,9 +986,16 @@ CATEGORIES_DICT = {"concepts": "CONCEPTS", "civilizations": "CIVILISATIONS & DIR
 
 
 # ---  Scraping ---
-with open('daily_source.txt', 'r') as f:
-    url = f.readline(-1)
-category = CATEGORIES_DICT[url.split("/")[-2]]
+try:
+    with open('daily_source.txt', 'r') as f:
+        url = f.readline(-1).strip()
+    if url and '/' in url:
+        category = CATEGORIES_DICT.get(url.split("/")[-2], "CONCEPTS")
+    else:
+        category = "CONCEPTS"
+except FileNotFoundError:
+    category = "CONCEPTS"
+    url = "https://example.com/concepts/"
 
 
 def similarity(embd_1,embd_2):
@@ -902,17 +1003,34 @@ def similarity(embd_1,embd_2):
     return sim
 
 # 🔁 Données initiales
-with open("structured_text", "rb") as fp:   # Unpickling
-    structured_text = pickle.load(fp)
+structured_text = []
+structured_title = []
+structured_text_embd = []
+structured_title_embd = []
 
-with open("structured_title", "rb") as fp:   # Unpickling
-    structured_title = pickle.load(fp)
+try:
+    with open("structured_text", "rb") as fp:   # Unpickling
+        structured_text = pickle.load(fp)
+except FileNotFoundError:
+    pass
 
-with open("structured_text_embd", "rb") as fp:  # Unpickling
-    structured_text_embd = pickle.load(fp)
+try:
+    with open("structured_title", "rb") as fp:   # Unpickling
+        structured_title = pickle.load(fp)
+except FileNotFoundError:
+    pass
 
-with open("structured_title_embd", "rb") as fp:  # Unpickling
-    structured_title_embd = pickle.load(fp)
+try:
+    with open("structured_text_embd", "rb") as fp:  # Unpickling
+        structured_text_embd = pickle.load(fp)
+except FileNotFoundError:
+    pass
+
+try:
+    with open("structured_title_embd", "rb") as fp:  # Unpickling
+        structured_title_embd = pickle.load(fp)
+except FileNotFoundError:
+    pass
 
 
 nlp = None
@@ -922,6 +1040,11 @@ def civantix():
     if nlp is None:
         nlp = spacy.load("fr_core_news_lg")
     print('civantix')
+    
+    # Vérifier que les données existent
+    if not structured_title or not structured_text:
+        return render_template("civantix.html", title=[], text=[], clue="Données non disponibles")
+    
     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 
 

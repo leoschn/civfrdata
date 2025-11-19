@@ -8,49 +8,76 @@
     <form class="d-flex w-100" method="POST" action="{{ url_for('civ_data_search') }}">
       <div class="input-group w-100">
         <select name="civ" class="form-select rounded-pill me-2" aria-label="Select Player">
-          <option selected value='All civs'>All civs</option>
+          <option selected value='{{selected_civ}}'>{{selected_civ}}</option>
+          <option value='All civs'>All civs</option>
           {% for civ in list_civs %}
             <option value="{{civ }}">{{ civ }}</option>
           {% endfor %}
         </select>
         <select name="team" class="form-select rounded-pill me-2" aria-label="Select Team">
-          <option selected value='"Team A"'>All Teams</option>
+          <option selected value='{{selected_team}}'>{{team_mapping[selected_team | int]}}</option>
+          <option value='All Teams'>All Teams</option>
           {% for team in list_team %}
             <option value="{{ team['team_id'] }}">{{ team_mapping[team['team_id']] }}</option>
           {% endfor %}
         </select>
         <select name="map" class="form-select rounded-pill me-2" aria-label="Select Map">
-          <option selected value='"Map played"'>All Maps</option>
+          <option selected value='{{selected_map}}'>{{selected_map}}</option> <!--la map sélectionnée apparait 2 fois  car elle est aussi dans la liste des maps -->
+          <option value='All Maps'>All Maps</option>
           {% for name in list_map %}
             <option value="{{ name['Map played'] }}">{{ name['Map played'] }}</option>
           {% endfor %}
         </select>
         <select name="div" class="form-select rounded-pill me-2" aria-label="Select Division">
-          <option selected value='"Division"'>All Divisions</option>
+          <option selected value='{{selected_div}}'>{{selected_div}}</option>
+          <option value='All Divisions'>All Divisions</option>
           {% for name in list_div %}
             <option value="{{ name['Division'] }}">{{ name['Division'] }}</option>
           {% endfor %}
         </select>
         <select name="season" class="form-select rounded-pill me-2" aria-label="Select Player">
-          <option selected value='"Season"'>All seasons</option>
+          <option selected value='{{selected_season}}'>{{selected_season}}</option>
+          <option value='All Seasons'>All Seasons</option>
           {% for name in list_seasons %}
             <option value="{{ name['Season'] }}">{{ name['Season'] }}</option>
           {% endfor %}
         </select>
         <!-- Bouton de validation ajouté pour lancer la recherche -->
         <button type="submit" class="btn btn-light rounded-pill ms-2">Search</button>
+        <!-- Toggle pour sélectionner si on affiche les civs sans données -->
+      </div>
+      <div class="form-check form-switch ms-3 d-flex align-items-center">
+        <input class="form-check-input me-2" type="checkbox" id="AllCivToggle" 
+              name="all_civs_toggle" value="true"
+              {% if show_all_civs %}checked{% endif %}>
+        <label class="form-check-label bg-white text-dark px-2 rounded" for="AllCivToggle">
+          Show civs without data
+        </label>
       </div>
     </form>
   </div>
 </nav>
 {% endblock %}
-
 {% block content %}
 <div class="container">
   <h1 class="text-center display-4 text-white mb-5" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Civ data </h1>
     </div>
   <!-- Affichage des résultats de la recherche ou des games -->
+      
+    <div class="progress">
+        <div class="progress-bar bg-success" role="progressbar" style="width: 40%" >Win Rate</div>
+        <div class="progress-bar bg-danger" role="progressbar" style="width: 40%" >Lose Rate</div>
+        <div class="progress-bar" role="progressbar" style="width: 20%; background-color: rgb(90, 90, 90)">Data Error</div>
+    </div>
+    <div class="progress mb-4">
+        <div class="progress-bar" role="progressbar" style="width: 25% ; background-color: rgb(255,215,0)">Pick Rate Ally Team</div>
+        <div class="progress-bar" role="progressbar" style="width: 25% ; background-color: rgb(38, 38, 38)" >Ban Rate Ally Team</div>
+        <div class="progress-bar" role="progressbar" style="width: 25% ; background-color: rgb(149, 92, 169)">Pick Rate Enemy Team</div>
+        <div class="progress-bar" role="progressbar" style="width: 25% ; background-color: rgb(96, 58, 108)" >Ban Rate Enemy Team</div>
+      </div>
     {% for civ in civ_data %}
+      <!-- Affichage que les civ avec des données si le bouton est cliqué -->
+      {% if show_all_civs or civ_data[civ]['pick'] != 0 or  civ_data[civ]['ban_rate'] != 0 %} 
       <div class="row">
             <div class="col-2">
                 <div class="container-fluid">
@@ -73,15 +100,18 @@
               <div class="progress">
                 <div class="progress-bar bg-success" role="progressbar" style="width: {{ civ_data[civ]['win_rate'] }}%" aria-valuenow="{{ civ_data[civ]['win_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['win_rate'] }}%</div>
                 <div class="progress-bar bg-danger" role="progressbar" style="width: {{ civ_data[civ]['lose_rate'] }}%" aria-valuenow="{{ civ_data[civ]['lose_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['lose_rate'] }}%</div>
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['error_rate'] }}%;background-color: rgb(90, 90, 90)" aria-valuenow="{{ civ_data[civ]['error_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['error_rate'] }}% </div>
               </div>
               <div class="progress">
                 <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['pick_rate'] }}% ; background-color: rgb(255,215,0)" aria-valuenow="{{ civ_data[civ]['pick_rate'] }}" aria-valuemin="0" aria-valuemax="100"> {{ civ_data[civ]['pick_rate'] }}%</div>
                 <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['ban_rate'] }}% ; background-color: rgb(38, 38, 38)" aria-valuenow="{{ civ_data[civ]['ban_rate'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['ban_rate'] }}%</div>
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['pick_rate_enemy_team'] }}% ; background-color: rgb(149, 92, 169)" aria-valuenow="{{ civ_data[civ]['pick_rate_enemy_team'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['pick_rate_enemy_team'] }}%</div>
+                <div class="progress-bar" role="progressbar" style="width: {{ civ_data[civ]['ban_rate_enemy_team'] }}% ; background-color: rgb(96, 58, 108)" aria-valuenow="{{ civ_data[civ]['ban_rate_enemy_team'] }}" aria-valuemin="0" aria-valuemax="100">{{ civ_data[civ]['ban_rate_enemy_team'] }}%</div>
               </div>
             </div>
       </div>
 
-
+      {% endif %}
     {% endfor %}
 
 <script>
