@@ -261,8 +261,9 @@ def get_civ_data_from_game(games,civs, team_id):
         }
     return civ_data,total_game
 
-def get_player_stats(player_id,season='all'):
-    conn = get_db_connection(season)
+def get_player_stats(player_id,season='all',league='all'):
+    #conn = get_db_connection(season)
+    conn = get_db_connection('all')
     conn.row_factory = sqlite3.Row
 
    # Récupérer les informations du joueur dans la table players
@@ -288,11 +289,23 @@ def get_player_stats(player_id,season='all'):
     map_counts = {}   # Dictionnaire comptant chaque map jouée
     wins = 0
 
+    query = 'SELECT * FROM games WHERE id = ?'
+
+    if season != "all":
+        query += " AND season = ?"
+
+    if league != "all":
+        query += " AND league = ?"
+
     # Pour chaque game dans lequel le joueur a joué
     for game_id in game_ids:
-        game = conn.execute(
-            'SELECT * FROM games WHERE "id" = ?', (game_id,)
-        ).fetchone()
+        params = [game_id]
+        if season != "all":
+            params.append(int(season))
+        if league != "all":
+            params.append(league)
+        
+        game = conn.execute(query, params).fetchone()
         if game is None:
             continue
 
@@ -418,17 +431,26 @@ def get_all_players_dict(season='all'):
         players_dict[player['player_id']]=player['player_name']
     return players_dict
 
-def get_team_stats(team_id,season='all'):
-    conn = get_db_connection(season)
+def get_team_stats(team_id,season='all', league='all'):
+    conn = get_db_connection('all')
     conn.row_factory = sqlite3.Row
 
     # Récupérer tous les matchs où l'équipe est impliquée (Team A ou Team B)
     matches_query = """
       SELECT *
       FROM games
-      WHERE "Team A" = ? OR "Team B" = ?
+      WHERE ("Team A" = ? OR "Team B" = ?)
     """
-    matches_data = conn.execute(matches_query, (team_id, team_id)).fetchall()
+    params = [team_id, team_id]
+    if season != "all":
+        matches_query += " AND season = ?"
+        params.append(int(season))
+
+    if league != "all":
+        matches_query += " AND league = ?"
+        params.append(league)
+
+    matches_data = conn.execute(matches_query, params).fetchall()
     matches = []
     wins = 0
     maps_counts = {}
@@ -697,28 +719,59 @@ def team_list():
     teams = get_all_teams()
     return render_template('team_list.html', teams=teams)
 
-@app.route('/player/<player_id>')
+@app.route('/player/<player_id>', methods=['GET', 'POST'])
 def player_details(player_id):
+
+    conn = get_db_connection('all')
+    list_seasons = conn.execute('SELECT DISTINCT "Season" FROM games WHERE "PlayerA1" = ? OR "PlayerA2" = ? OR "PlayerA3" = ? OR "PlayerA4" = ? OR "PlayerB1" = ? OR "PlayerB2" = ? OR "PlayerB3" = ? OR "PlayerB4" = ?', (player_id, player_id, player_id, player_id, player_id, player_id, player_id, player_id)).fetchall()
+    list_league = conn.execute('SELECT DISTINCT "league" FROM games WHERE "PlayerA1" = ? OR "PlayerA2" = ? OR "PlayerA3" = ? OR "PlayerA4" = ? OR "PlayerB1" = ? OR "PlayerB2" = ? OR "PlayerB3" = ? OR "PlayerB4" = ?', (player_id, player_id, player_id, player_id, player_id, player_id, player_id, player_id)).fetchall()
+    conn.close()
+    season = request.form.get('season') or 'All Seasons' #'All Seasons' pour toutes les séries,  si on vient de player_list, il n'y a pas de donnée et il faut mettre 'All Seasons'
+    league = request.form.get('league') or 'All Leagues' #'All Leagues' pour toutes les ligues
+
+    #transformation pour la fonction get_player_stats
+    if (season == 'All Seasons'):
+        season = 'all'
+    if (league == 'All Leagues'):
+        league = 'all'
     # Récupère toutes les infos détaillées du joueur
-    player = get_player_stats(int(player_id))
+    player = get_player_stats(int(player_id),league=league,season=season)
     team_mapping = get_all_teams_dict()
     if player is None:
         abort(404)
+    
     return render_template('player.html', player=player,url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
-                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES, team_mapping=team_mapping)
+                           url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES, team_mapping=team_mapping,
+                           list_seasons=list_seasons, list_league=list_league,
+                           selected_league=league.strip("'") if league != 'all' else 'All Leagues',
+                           selected_season=season.strip("'") if season != 'all' else 'All Seasons')
 
-@app.route('/team/<team_id>')
+@app.route('/team/<team_id>', methods=['GET', 'POST'])
 def team_details(team_id):
     conn = get_db_connection('all')
-    conn.row_factory = sqlite3.Row
-    team = get_team_stats(int(team_id))
+    list_seasons = conn.execute('SELECT DISTINCT "Season" FROM games WHERE "Team A" = ? OR "Team B" = ?', (team_id, team_id)).fetchall()
+    list_league = conn.execute('SELECT DISTINCT "league" FROM games WHERE "Team A" = ? OR "Team B" = ?', (team_id, team_id)).fetchall()
+    conn.close()
+    season = request.form.get('season') or 'All Seasons' #'All Seasons' pour toutes les séries,  si on vient de player_list, il n'y a pas de donnée et il faut mettre 'All Seasons'
+    league = request.form.get('league') or 'All Leagues' #'All Leagues' pour toutes les ligues
+
+    #transformation pour la fonction get_team_stats
+    if (season == 'All Seasons'):
+        season = 'all'
+    if (league == 'All Leagues'):
+        league = 'all'
+
+    team = get_team_stats(int(team_id), season=season, league=league)
     teams_mapping = get_all_teams_dict()
     player_mapping = get_all_players_dict()
     if team is None:
         abort(404)
     return render_template('team.html', team=team, url_civ=CIV_ASSETS_NAMES, display_civ=CIV_DISPLAY_NAMES,
                            url_map=MAP_ASSETS_NAME, display_map=MAP_DISPLAY_NAMES,teams_mapping=teams_mapping,
-                           player_mapping=player_mapping)
+                           player_mapping=player_mapping,
+                           list_seasons=list_seasons, list_league=list_league,
+                           selected_league=league.strip("'") if league != 'all' else 'All Leagues',
+                           selected_season=season.strip("'") if season != 'all' else 'All Seasons')
 
 
 

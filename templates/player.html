@@ -9,13 +9,32 @@
         <h1 class="display-4 text-center text-white">{{ player.pseudo }}</h1>
         <p class="lead text-center text-white-50">Détails et statistiques</p>
     </div>
-
+    <form method="POST" action="{{ url_for('player_details', player_id=player['player_id']) }}">
+        <div class="mb-4 d-flex justify-content-center">
+            <select name="league" class="form-select rounded-pill me-2 w-50" aria-label="Select League">
+            <option selected value='{{selected_league}}'>{{selected_league}}</option>
+            <option value='All Leagues'>All Leagues</option>
+            {% for name in list_league %}
+                <option value="{{name['league'] }}">{{ name['league'] }}</option>
+            {% endfor %}
+            </select>
+            <select name="season" class="form-select rounded-pill me-2 w-50" aria-label="Select Season">
+                <option selected value='{{selected_season}}'>{{selected_season}}</option>
+                <option value='All Seasons'>All Seasons</option>
+                {% for name in list_seasons %}
+                    <option value="{{name['Season'] }}">{{ name['Season'] }}</option>
+                {% endfor %}
+            </select>
+            <!-- Bouton de validation ajouté pour lancer la recherche -->
+            <button type="submit" class="btn btn-light rounded-pill">Apply</button>
+        </div>
+    </form>
     <!-- Carte d'information du joueur -->
     <div class="card bg-dark text-white mb-5 shadow" style="border: 1px solid #ffffff;">
         <div class="card-body">
             <h4 class="card-title"> {{ player.player_name }} </h4>
             <p class="card-text">
-                <strong>Team Civfr:</strong>
+                <strong>Current Team Civfr:</strong>
                 {% if team_mapping[player.team_civfr] %}
                 <a href="{{ url_for('team_details', team_id=player.team_civfr) }}" class="text-info">
                     {{ team_mapping[player.team_civfr] }}
@@ -24,7 +43,7 @@
                 Sans équipe actuellement
                 </a><br>
                 {% endif %}
-                <strong>Team CPL:</strong>
+                <strong>Current Team CPL:</strong>
                 {% if team_mapping[player.team_cpl] %}
                 <a href="{{ url_for('team_details', team_id=player.team_cpl) }}" class="text-info">
                     {{ team_mapping[player.team_cpl] }}

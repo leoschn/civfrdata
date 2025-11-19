@@ -32,7 +32,7 @@
           {% endfor %}
         </select>
         <select name="season" class="form-select rounded-pill me-2" aria-label="Select Player">
-          <option selected value='"Season"'>All seasons</option>
+          <option selected value='"Season"'>All Seasons</option>
           {% for name in list_seasons %}
             <option value="{{name['Season'] }}">{{ name['Season'] }}</option>
           {% endfor %}
@@ -46,7 +46,7 @@
               name="all_civs_toggle" value="true"
               checked>
         <label class="form-check-label bg-white text-dark px-2 rounded" for="AllCivToggle">
-          Show civs without data
+          Show civs without pick or ban
         </label>
       </div>
     </form>
