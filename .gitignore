@@ -3,6 +3,5 @@ __pycache/
 __pycache__/main.cpython-312.pyc
 /token.txt
 package-lock.json
-database_CPL5.db
-database_s16.db
-database_complete.db
+*.db
+*.csv
