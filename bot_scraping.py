@@ -466,25 +466,25 @@ async def on_ready():
         info["current_team_cpl"] = 'NONE'
 
         for team_id in info['teams_cpl'].keys() :
-            if team_id in player_id_map_cpl[id]['role_list'] and team_id is not None:
+            if team_id is not None and id in player_id_map_cpl and team_id in player_id_map_cpl[id]['role_list'] :
                 info["current_team_cpl"] = team_id
 
         info["current_team_civfr"] = 'NONE'
         for team_id in info['teams_civfr'].keys() :
-            if team_id in player_id_map_civfr[id]['role_list'] and team_id is not None:
+            if team_id is not None and id in player_id_map_civfr and team_id in player_id_map_civfr[id]['role_list']:
                 info["current_team_civfr"] = team_id
 
 
     # Compléter teams_dict avec la liste des joueurs extraits
     for id, info in players_dict.items():
         team = info["current_team_cpl"]
-        if team is not 'NONE':
+        if team != 'NONE':
             if team not in teams_dict:
                 teams_dict[team] = {"players": set(), "games": set(), "division": "","league":"cpl"}
             teams_dict[team]["players"].add(id)
 
         team = info["current_team_civfr"]
-        if team is not 'NONE':
+        if team != 'NONE':
             if team not in teams_dict:
                 teams_dict[team] = {"players": set(), "games": set(), "division": "","league":"civfr"}
             teams_dict[team]["players"].add(id)
