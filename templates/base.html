@@ -78,7 +78,19 @@
   </nav>
   
   <!-- Bloc optionnel pour une navigation additionnelle -->
-  {% block extra_nav %}{% endblock %}
+  {% block extra_nav %}
+  <div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center breaking-news">
+                <div class="d-flex flex-row flex-grow-1 flex-fill justify-content-center bg-danger py-2 text-white px-1 news"><span class="d-flex align-items-center">&nbsp; Alerte Info </span></div>
+                <marquee class="news-scroll" behavior="scroll" direction="left" onmouseover="this.stop();" onmouseout="this.start();"> <span class="dot"></span> <a href="https://discordapp.com/users/295967173099257856"> Mercato : La Grande barrière de fromage recrute, nous cherchons des joueurs pour le qualifier CWC a venir, notamment avec un profil naval. Les MPs de Areta sont ouverts.  </a> <span class="dot"></span> <a href="https://discord.com/channels/197418659067592708/545288394905747468"> Justice : Topawar fait son grand retour, la surprise du mercato ? </a> <span class="dot"></span> <a href="https://discord.com/channels/197418659067592708/545288394905747468"> Beta BBG : Qui se cache derrière un nouveau buff Mali ? </a> <span class="dot"></span>
+                </marquee>
+            </div>
+        </div>
+    </div>
+</div>
+  {% endblock %}
 
   <main class="container mt-5">
     {% block content %}{% endblock %}
