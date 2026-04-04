@@ -1,10 +1,7 @@
-import os
-
 import discord
 import datetime
 import pandas as pd
 from unidecode import unidecode
-import sqlite3
 import re
 import shutil
 import os
@@ -249,12 +246,12 @@ async def on_ready():
 
     df = pd.concat([df1, df2, df3], axis=0)
     df['league'] = 'civfr'
-    df['Season'] = 16
-    df.to_csv(base_path + 'data_S16.csv', index=False)
+    df['Season'] = 17
+    df.to_csv(base_path + 'data_S17.csv', index=False)
 
-    dfcpl['Season'] = 5
+    dfcpl['Season'] = 6
     dfcpl['league'] = 'cpl'
-    dfcpl.to_csv(base_path + 'data_CPL5.csv', index=False)
+    dfcpl.to_csv(base_path + 'data_CPL6.csv', index=False)
 
     print('report scrapped')
 
