@@ -212,7 +212,7 @@ async def on_ready():
 
             for col in ['Team A','Team B','Winner']:
                 df1[col] = df1[col].map(lambda x: role_id_map_cwc[int(x)])
-            df1.to_csv('cwc_database.csv',index=False)
+            df1.to_csv('~/public_html/civfrdata/cwc_database.csv',index=False)
     await client.close()
 
 path_token = base_path + "token.txt"
