@@ -32,7 +32,9 @@
               <li><a class="btn btn-outline-primary w-100 rounded-pill my-1"
                      href="{{ url_for('landingpages15') }}">Squadron S15</a></li>
               <li><a class="btn btn-outline-primary w-100 rounded-pill my-1"
-                     href="{{ url_for('landingpage') }}">Squadron S16</a></li>
+                     href="{{ url_for('landingpages16') }}">Squadron S16</a></li>
+              <li><a class="btn btn-outline-primary w-100 rounded-pill my-1"
+                     href="{{ url_for('landingpages17') }}">Squadron S17</a></li>
               <li><a class="btn btn-outline-primary w-100 rounded-pill my-1" href="{{ url_for('landingpagescpl5') }}">Premier League</a></li>
             </ul>
           </li>
@@ -77,8 +79,8 @@
     </div>
   </nav>
   
-  <!-- Bloc optionnel pour une navigation additionnelle -->
-<!--  {% block extra_nav %}-->
+<!--   Bloc optionnel pour une navigation additionnelle-->
+  {% block extra_nav %}
 <!--  <div class="container mt-5">-->
 <!--    <div class="row">-->
 <!--        <div class="col-md-12">-->
@@ -91,7 +93,7 @@
 <!--        </div>-->
 <!--    </div>-->
 <!--</div>-->
-<!--  {% endblock %}-->
+  {% endblock %}
 
   <main class="container mt-5">
     {% block content %}{% endblock %}

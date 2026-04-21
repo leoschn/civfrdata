@@ -110,9 +110,9 @@ list_map_url = [
     ("tilted axis", 'Map_Tilted_Axis_(Civ6).webp', "Tilted Axis"),
     ("primordial", 'Map_Primodial_29.webp', "Primordial"),
     ("inland sea", 'Map_Inland_Sea_29.webp', "Inland Sea"),
-    ("pangaea est-west", 'Pangaea_Est_West-703c505f.png', "Pangaea Est-West "),
-    ("inland est-west","Inland_Est_West-25322f67.png","Inland Est-West"),
-    ("inland sea east-west","Inland_Est_West-25322f67.png","Inland Est-West"),
+    ("pangaea east-west", 'Pangaea_Est_West-703c505f.png', "Pangaea East-West "),
+    ("inland east-west","Inland_Est_West-25322f67.png","Inland East-West"),
+    ("pangaea ultime","Pangaea_ultime.png","Pangaea Ultime")
 ]
 
 # Dictionnaires pour les assets (chemin vers l'image)
@@ -140,6 +140,8 @@ def get_db_connection(season):
         conn = sqlite3.connect('database_s15_legacy.db')
     elif season ==16 :
         conn = sqlite3.connect('database_s16.db')
+    elif season == 17:
+        conn = sqlite3.connect('database_s17.db')
     elif season =='cpl5' :
         conn = sqlite3.connect('database_CPL5.db')
     conn.row_factory = sqlite3.Row
@@ -570,10 +572,42 @@ def get_minimal_team_stats(team_id,season='all'):
         "win_rate": 0 if total_games==0 else wins/total_games,
     }
 
+@app.route('/')
+def landingpages17():
+    teams = get_all_teams(17)
+    divisions = {}
+
+    for team in teams:
+        team_dict = dict(team)  # Conversion de sqlite3.Row en dictionnaire
+        div = team_dict["division"]
+        if div not in divisions:
+            divisions[div] = []
+        divisions[div].append(team_dict)
+
+    # Pour chaque division, trier les équipes par nombre de victoires décroissant et attribuer un rang
+    for div, team_list in divisions.items():
+    # On s'assure que le nombre de victoires est un entier
+
+        for team in team_list:
+            stats = get_minimal_team_stats(team['team_id'],17)
+            team["wins"] = stats["wins"]
+            team["loses"] = stats["loses"]
+            team["total_games"] = stats["total_games"]
+
+        sorted_teams = sorted(team_list, key=lambda t: int(t.get("wins", 0)), reverse=True)
+        for rank, team in enumerate(sorted_teams, start=1):
+            team["ranking"] = rank
+
+        divisions[div] = sorted_teams
+
+    # Optionnel : définir l'ordre des divisions à afficher (par exemple, 1, 2, 3a, 3b)
+    order = ['1', '2', '3','4','5']
+
+    return render_template('landingpage.html', divisions=divisions, order=order)
 
 
 @app.route('/')
-def landingpage():
+def landingpages16():
     teams = get_all_teams(16)
     divisions = {}
 
@@ -836,7 +870,7 @@ def index_civ():
     list_seasons = conn.execute('SELECT DISTINCT "Season" FROM games').fetchall()
     team_mapping=get_all_teams_dict()
     conn.close()
-
+    print(list_map)
 
     return render_template('civ_data_index.html', url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, list_map=list_map, list_team=list_team, list_div=list_div,
@@ -895,7 +929,8 @@ def civ_data_search():
     
     #print(season + ' ' + div + ' ' + map + ' ' + civ)
     # Passer les valeurs actuelles des filtres au template
-    
+
+
     return render_template('civ_data.html', 
                            url_civ=CIV_ASSETS_NAMES,
                            url_map=MAP_ASSETS_NAME, 
