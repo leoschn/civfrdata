@@ -661,9 +661,7 @@ async def on_ready():
     for team_id, info in teams_dict.items():
         if team_id!='UNKNOWN':
             division = info.get("division", "")
-
             for game_id in info["games"]:
-
                 cursor.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
                 cursor_s17.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
             for id in info["players"]:

@@ -136,11 +136,11 @@ def extract_from_string_raw(s, format,verbose=False):
             try :
                 data['PlayerA{0}'.format(i+1)]=re.findall(pattern_user, splited_s[6+i+dec])[0]
             except:
-                data['PlayerA{0}'.format(i+1)] = 'UNKNOWN'
+                data['PlayerA{0}'.format(i+1)] = 0
             try:
                 data['PlayerB{0}'.format(i+1)] =re.findall(pattern_user, splited_s[11+i+dec])[0]
             except:
-                data['PlayerB{0}'.format(i+1)] = 'UNKNOWN'
+                data['PlayerB{0}'.format(i+1)] = 0
 
     else:
         if verbose:
@@ -184,6 +184,7 @@ async def on_ready():
             )
             # Building user database
             player_id_map_cwc= {}
+            player_id_map_cwc[0]={'name':'Unknown',"role_list":['Unknown']}
             for member in guild.members:
                 id = member.id
                 name = member.display_name
