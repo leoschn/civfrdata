@@ -641,6 +641,9 @@ async def on_ready():
     for id, info in players_dict.items():
         team_civfr = info["current_team_civfr"]
         team_cpl = info["current_team_cpl"]
+        print(team_civfr)
+        print(team_cpl)
+        print(id)
         if team_civfr !='NONE' :
             player_name = player_id_map_civfr[id]['name']
             cursor_s17.execute("INSERT INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id,player_name, team_civfr,team_cpl))
@@ -648,7 +651,10 @@ async def on_ready():
         elif team_cpl !='NONE':
             player_name = player_id_map_cpl[id]['name']
             # cursor_cpl.execute("INSERT INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id,player_name, team_civfr,team_cpl))
-        cursor.execute("REPLACE INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id, player_name, team_civfr,team_cpl))
+        try :
+            cursor.execute("REPLACE INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id, player_name, team_civfr,team_cpl))
+        except:
+            pass
 
 
         #TODO isoler cpl civ fr
