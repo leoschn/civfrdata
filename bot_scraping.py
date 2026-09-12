@@ -51,7 +51,7 @@ def extract_from_string_raw(s, format,verbose=False):
         try :
             data['Team B'] = re.findall(pattern_role, splited_s[0+dec].split('vs')[1])[0]
         except:
-            data['Team B'] = 'UNKNOWN'
+            data['Team B']  = 'UNKNOWN'
 
         #extract winner
         try :
@@ -159,6 +159,163 @@ def extract_from_serie_raw(s, format,verbose=False):
             l.append(data.copy())
     return pd.DataFrame(l)
 
+
+# ============================================================================
+# Season configuration - THE ONLY BLOCK YOU SHOULD NEED TO EDIT AT THE START
+# OF A NEW SEASON. No database file renaming, no manually-counted id offset:
+# the merge step below (merge_season_games) figures both out automatically
+# from what's already in database_complete.db.
+# ============================================================================
+SEASON = 17
+LEAGUE = "civfr"
+SEASON_START = datetime.datetime(2026, 4, 5, 8, 30)
+DIVISION_CHANNELS = {
+    "1": "s17-reporting-d1",
+    "2": "s17-reporting-d2",
+    "3": "s17-reporting-d3",
+    "4": "s17-reporting-d4",
+    "5": "s17-reporting-d5",
+}
+DATABASE_PATH = base_path + "database_complete.db"
+# ============================================================================
+
+
+def merge_season_games(conn, df, season, league, player_id_map, role_id_map):
+    """
+    Merge one season's freshly-scraped games into the persistent
+    database_complete.db, replacing the old approach of copying a growing
+    chain of baseline snapshot files (database_s15_s16_cpl.db, ...) and
+    hand-counting a `data.index += N` id offset each season.
+
+    df: DataFrame of this (season, league)'s games, same columns as before,
+        no 'id' column yet.
+    player_id_map: {player_id: {"name": str, "role_list": [role_id, ...]}}
+    role_id_map:   {role_id: team_name}
+
+    Returns (n_games_merged, id_offset_used).
+
+    Tested against a copy of the real database in /home/steam/db_test
+    (season_merge.py + run_tests.py) before being wired in here - see that
+    test suite for the two bugs it caught (id drift on rescrape due to the
+    Season=5/CPL id range being historically higher than later seasons, and
+    team_players being wrongly deletable per-season when it's actually a
+    cumulative all-time roster table).
+    """
+    cursor = conn.cursor()
+
+    # Preserve a season's existing id range across reruns (so any permalink
+    # or reference to a game id never drifts); only pick a fresh MAX(id)+1
+    # range the first time this season is ever scraped. NB: global MAX(id)
+    # is NOT reliably "the last season added" - Season=5 (CPL) has a higher
+    # id range than the later civfr seasons for historical reasons.
+    existing_ids = cursor.execute(
+        "SELECT id FROM games WHERE Season=? AND league=?", (season, league)
+    ).fetchall()
+    if existing_ids:
+        offset = min(row[0] for row in existing_ids)
+    else:
+        (max_id,) = cursor.execute("SELECT COALESCE(MAX(id), -1) FROM games").fetchone()
+        offset = max_id + 1
+
+    # Idempotent rerun: wipe this season+league's existing footprint first.
+    # player_games/team_games are safe to delete-and-rebuild by game_id since
+    # a game belongs to exactly one season. team_players/team_players_legacy
+    # are NOT season-scoped (no season column - they're a team's all-time
+    # roster), so they must never be deleted this way; only added to, below.
+    cursor.execute(
+        "DELETE FROM player_games WHERE game_id IN (SELECT id FROM games WHERE Season=? AND league=?)",
+        (season, league),
+    )
+    cursor.execute(
+        "DELETE FROM team_games WHERE game_id IN (SELECT id FROM games WHERE Season=? AND league=?)",
+        (season, league),
+    )
+    cursor.execute("DELETE FROM games WHERE Season=? AND league=?", (season, league))
+
+    df = df.copy()
+    df.index = range(offset, offset + len(df))
+    df["id"] = df.index
+
+    cols = list(df.columns)
+    placeholders = ",".join("?" for _ in cols)
+    col_list = ",".join(f'"{c}"' for c in cols)
+    cursor.executemany(
+        f"INSERT INTO games ({col_list}) VALUES ({placeholders})",
+        [tuple(row) for row in df.itertuples(index=False, name=None)],
+    )
+
+    players_dict = {}
+    teams_dict = {}
+    row_name_player_A = ["PlayerA1", "PlayerA2", "PlayerA3", "PlayerA4"]
+    row_name_player_B = ["PlayerB1", "PlayerB2", "PlayerB3", "PlayerB4"]
+
+    for row in df.to_dict(orient="records"):
+        game_id = row["id"]
+        division = row["Division"]
+        teamA, teamB = row["Team A"], row["Team B"]
+
+        if teamA != "UNKNOWN":
+            teamA = int(teamA)
+            teams_dict.setdefault(teamA, {"players": set(), "games": set(), "division": division, "league": league})
+            teams_dict[teamA]["games"].add(str(game_id))
+            for rn in row_name_player_A:
+                teams_dict[teamA]["players"].add(row[rn])
+        if teamB != "UNKNOWN":
+            teamB = int(teamB)
+            teams_dict.setdefault(teamB, {"players": set(), "games": set(), "division": division, "league": league})
+            teams_dict[teamB]["games"].add(str(game_id))
+            for rn in row_name_player_B:
+                teams_dict[teamB]["players"].add(row[rn])
+
+        for col, team in (("PlayerA1", teamA), ("PlayerA2", teamA), ("PlayerA3", teamA), ("PlayerA4", teamA),
+                          ("PlayerB1", teamB), ("PlayerB2", teamB), ("PlayerB3", teamB), ("PlayerB4", teamB)):
+            try:
+                pid = int(row[col])
+            except (TypeError, ValueError):
+                continue
+            players_dict.setdefault(pid, {"teams": {}, "games": set(),
+                                           "pseudo": player_id_map.get(pid, {}).get("name", "UNKNOWN")})
+            players_dict[pid]["games"].add(str(game_id))
+            if team:
+                players_dict[pid]["teams"][int(team)] = players_dict[pid]["teams"].get(int(team), 0) + 1
+
+    for pid, info in players_dict.items():
+        current_team = "NONE"
+        for team_id in info["teams"]:
+            if pid in player_id_map and team_id in player_id_map[pid].get("role_list", []):
+                current_team = team_id
+        cursor.execute(
+            "REPLACE INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?, ?, ?, ?)",
+            (pid, info["pseudo"], current_team, None),
+        )
+        for gid in info["games"]:
+            cursor.execute("INSERT INTO player_games (player_id, game_id) VALUES (?, ?)", (pid, int(gid)))
+
+    for team_id, info in teams_dict.items():
+        for gid in info["games"]:
+            cursor.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(gid)))
+        for pid in info["players"]:
+            # Additive only (see comment above): never wipe a team's roster
+            # history, just make sure this (team, player) pair exists once.
+            cursor.execute(
+                "INSERT INTO team_players (team_id, player_id) "
+                "SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM team_players WHERE team_id=? AND player_id=?)",
+                (team_id, pid, team_id, pid),
+            )
+            cursor.execute(
+                "INSERT INTO team_players_legacy (team_id, player_id) "
+                "SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM team_players_legacy WHERE team_id=? AND player_id=?)",
+                (team_id, pid, team_id, pid),
+            )
+        cursor.execute(
+            "REPLACE INTO teams (team_id, team_name, division, league) VALUES (?, ?, ?, ?)",
+            (team_id, role_id_map.get(team_id, f"team_{team_id}"), info["division"], league),
+        )
+
+    conn.commit()
+    return len(df), offset
+
+
 # enabling intents
 intents = discord.Intents.default()
 intents.members = True
@@ -171,538 +328,60 @@ cpl_name = 'CivPlayers Leagues'
 
 @client.event
 async def on_ready():
-    #
-    #
+    player_id_map_civfr = {}
+    role_id_map_civfr = {}
+
     for guild in client.guilds:
         if guild.name == civfr_id:
-
             print(
                 f'{client.user} is connected to the following guild:\n'
                 f'{guild.name}\n'
             )
             # Building user database
-            player_id_map_civfr= {}
             for member in guild.members:
-                id = member.id
-                name = member.display_name
-                role_list = member.roles
-                role_list = [role.id for role in role_list]
-                player_id_map_civfr[id]={}
-                player_id_map_civfr[id]["name"] = name
-                player_id_map_civfr[id]["role_list"] = role_list
-
-        #Building role database (team)
-            role_id_map_civfr = {}
-            for role in guild.roles:
-                id = role.id
-                name = role.name
-                role_id_map_civfr[id]=name
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d1')
-            messages = [{'message':message.content,'date' : message.created_at} async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df1 = pd.DataFrame(messages)
-            df1 = extract_from_serie_raw(df1,format='civfr')
-            df1['Division'] = '1'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d2')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df2 = pd.DataFrame(messages)
-            df2 = extract_from_serie_raw(df2,format='civfr')
-            df2['Division'] = '2'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d3')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df3= pd.DataFrame(messages)
-            df3 = extract_from_serie_raw(df3,format='civfr')
-            df3['Division'] = '3'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d4')
-            messages = [{'message': message.content, 'date': message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df4 = pd.DataFrame(messages)
-            df4 = extract_from_serie_raw(df4, format='civfr')
-            df4['Division'] = '4'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d5')
-            messages = [{'message': message.content, 'date': message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df5 = pd.DataFrame(messages)
-            df5 = extract_from_serie_raw(df5, format='civfr')
-            df5['Division'] = '5'
-
-        if guild.name == cpl_name:
-
-            player_id_map_cpl= {}
-            for member in guild.members:
-                id = member.id
-                name = member.display_name
-                role_list = member.roles
-                role_list = [role.id for role in role_list]
-                player_id_map_cpl[id]={}
-                player_id_map_cpl[id]["name"] = name
-                player_id_map_cpl[id]["role_list"] = role_list
+                player_id_map_civfr[member.id] = {
+                    "name": member.display_name,
+                    "role_list": [role.id for role in member.roles],
+                }
 
             # Building role database (team)
-            role_id_map_cpl = {}
             for role in guild.roles:
-                id = role.id
-                name = role.name
-                role_id_map_cpl[id] = name
+                role_id_map_civfr[role.id] = role.name
 
-            # print('scraping cpl')
-            # c_channel = discord.utils.get(guild.text_channels, name='pl-game-reports')
-            # messages = [{'message': message.content, 'date': message.created_at}  async for message in
-            #             c_channel.history(after=datetime.datetime(2026, 04, 02, 8, 30), limit=1000)]
-            # dfcpl = pd.DataFrame(messages)
-            # dfcpl.to_csv('temp_cpl.csv')
-            # dfcpl = extract_from_serie_raw(dfcpl,format='cpl')
+            # Scrape each division's reporting channel (channel names/season
+            # start date come from the config block at the top of this file -
+            # that's the only thing to edit for a new season).
+            dfs = []
+            for division, channel_name in DIVISION_CHANNELS.items():
+                c_channel = discord.utils.get(guild.text_channels, name=channel_name)
+                messages = [{'message': message.content, 'date': message.created_at} async for message in
+                            c_channel.history(after=SEASON_START, limit=1000)]
+                df_div = pd.DataFrame(messages)
+                df_div = extract_from_serie_raw(df_div, format='civfr')
+                df_div['Division'] = division
+                dfs.append(df_div)
 
+        # CPL scraping is currently disabled (channel/report format was never
+        # finalized for it) - the guild's member/role maps are left ready so
+        # it can be turned back on by uncommenting a channel scrape above and
+        # calling merge_season_games(conn, df_cpl, season=SEASON, league="cpl",
+        # player_id_map=player_id_map_cpl, role_id_map=role_id_map_cpl).
+        # if guild.name == cpl_name:
+        #     ...
 
-    df = pd.concat([df1, df2, df3, df4, df5], axis=0)
-    df['league'] = 'civfr'
-    df['Season'] = 17
-    df.to_csv(base_path + 'data_S17.csv', index=False)
-
-    # dfcpl['Season'] = 7
-    # dfcpl['league'] = 'cpl'
-    # dfcpl.to_csv(base_path + 'data_CPL6.csv', index=False)
-
+    df = pd.concat(dfs, axis=0)
+    df['league'] = LEAGUE
+    df['Season'] = SEASON
+    df.to_csv(base_path + f'data_S{SEASON}.csv', index=False)
     print('report scrapped')
 
-    shutil.copyfile(base_path + 'database_s15_s16_cpl.db', base_path + 'database_complete.db')
-    conn = sqlite3.connect(base_path + 'database_complete.db')
-
-    conn_s17 = sqlite3.connect(base_path + 'database_s17.db')
-    data = pd.read_csv(base_path + 'data_S17.csv')
-    data.index+=786 #number of total games
-    data['id']=data.index
-
-    # data_cpl = pd.read_csv(base_path + 'data_CPL6.csv')
-    # conn_cpl = sqlite3.connect(base_path + 'database_CPL5.db')
-    # data_cpl.index += 306 + 1500  #au cas ou bcp de games CPL (temporary fix)
-    # data_cpl['id']=data_cpl.index
-
-    # Dictionnaire pour stocker les games uniques.
-    # Clé : id du joueur.
-    # Valeur : dictionnaire contenant :
-    #   - "TeamA/TeamB"             : ID de l'équipe
-    #   - "Winner"                  : ID de l'équipe ga gnante
-    #   - "PlayerAX/playerBX"       : ID du joueur
-    #   - "Season": numero de la saison
-
-    cursor_s17 = conn_s17.cursor()
-    # cursor_cpl = conn_cpl.cursor()
-    cursor_s17.execute("DROP TABLE IF EXISTS games")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS games")
-    data.to_sql('games', conn_s17,dtype={'Team A':'INTEGER','Team B':'INTEGER','Winner':'INTEGER','PlayerA1':'INTEGER'
-                                     ,'PlayerA2':'INTEGER','PlayerA3':'INTEGER','PlayerA4':'INTEGER','PlayerB1':'INTEGER'
-                                     ,'PlayerB2':'INTEGER','PlayerB3':'INTEGER','PlayerB4':'INTEGER'})
-    # data_cpl.to_sql('games', conn_cpl,
-    #             dtype={'Team A': 'INTEGER', 'Team B': 'INTEGER', 'Winner': 'INTEGER', 'PlayerA1': 'INTEGER'
-    #                 , 'PlayerA2': 'INTEGER', 'PlayerA3': 'INTEGER', 'PlayerA4': 'INTEGER', 'PlayerB1': 'INTEGER'
-    #                 , 'PlayerB2': 'INTEGER', 'PlayerB3': 'INTEGER', 'PlayerB4': 'INTEGER'})
-    conn_s17.commit()
-    # conn_cpl.commit()
-
-
-    conn_s17.row_factory = sqlite3.Row  # Pour accéder aux colonnes par leur nom
-    # conn_cpl.row_factory = sqlite3.Row
-    cursor_s17 = conn_s17.cursor()
-    # cursor_cpl = conn_cpl.cursor()
-    cursor = conn.cursor()
-
-    # cursor.execute("ALTER TABLE games ADD Ban15 TINYTEXT")
-    # cursor.execute("ALTER TABLE games ADD Ban16 TINYTEXT")
-    # cursor.execute("ALTER TABLE games ADD league TEXT DEFAULT 'civfr'")
-    # cursor.execute("ALTER TABLE teams ADD league TEXT DEFAULT 'civfr'")
-    # cursor.execute("ALTER TABLE players ADD team_cpl INTEGER DEFAULT NULL")
-    # cursor.execute("ALTER TABLE players RENAME COLUMN team TO team_civfr")
-
-    # Récupération de toutes les lignes de la table "games"
-    cursor_s17.execute("SELECT * FROM games")
-    games_data = cursor_s17.fetchall()
-    # cursor_cpl.execute("SELECT * FROM games")
-    # games_cpl_data  = cursor_cpl.fetchall()
-    # Dictionnaire pour stocker les joueurs uniques.
-    # Clé : id du joueur.
-    # Valeur : dictionnaire contenant :
-    #   - "teams"       : dictionnaire avec comme clé l'ID de l'équipe et comme valeur le nombre de matchs joués pour cette équipe.
-    #   - "games"       : ensemble des IDs des matchs où il apparaît.
-    #   - "pseudo"      : player pseudo
-    #   - "current_team": current player team based on its discord role
-    players_dict = {}
-
-    # Dictionnaire pour stocker les équipes.
-    # Clé : nom de l'équipe.
-    # Valeur : dictionnaire contenant :
-    #   - "players" : ensemble des IDs appartenant à l'équipe.
-    #   - "games"   : ensemble des IDs des matchs où l'équipe a joué.
-    #   - "name"    : team name
-    #   - "division": la division de l'équipe (prise lors de la première occurrence).
-    teams_dict = {}
-    teams_dict_legacy = {}
-    row_name_player_A = ['PlayerA1', 'PlayerA2', 'PlayerA3', 'PlayerA4']
-    row_name_player_B = ['PlayerB1', 'PlayerB2', 'PlayerB3', 'PlayerB4']
-    for row in games_data:
-        cursor.execute(
-            "INSERT INTO games ('Team A','Team B',Winner,Victory,'Victory Turn','Map played','Map ban1','Map ban2','Map ban3','Map ban4','Map ban5','Map ban6',Ban1,Ban2,Ban3,Ban4,Ban5,Ban6,Ban7,Ban8,Ban9,Ban10,Ban11,Ban12,Ban13,Ban14,Ban15,Ban16,PickA1,PickB1,PickA2,PickB2,PickA3,PickB3,PickA4,PickB4,PlayerA1,PlayerB1,PlayerA2,PlayerB2,PlayerA3,PlayerB3,PlayerA4,PlayerB4,Date,Division,Season,id,League) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (row["Team A"], row["Team B"], row["Winner"], row["Victory"], row["Victory Turn"], row["Map played"],
-             row["Map ban1"], row["Map ban2"],
-             row["Map ban3"], row["Map ban4"], row["Map ban5"], row["Map ban6"], row["Ban1"], row["Ban2"], row["Ban3"],
-             row["Ban4"],
-             row["Ban5"], row["Ban6"], row["Ban7"], row["Ban8"], row["Ban9"], row["Ban10"], row["Ban11"], row["Ban12"],
-             row["Ban13"], row["Ban14"], row["Ban15"], row["Ban16"], row["PickA1"], row["PickB1"], row["PickA2"],
-             row["PickB2"],
-             row["PickA3"], row["PickB3"], row["PickA4"], row["PickB4"], row["PlayerA1"], row["PlayerB1"],
-             row["PlayerA2"],
-             row["PlayerB2"], row["PlayerA3"], row["PlayerB3"], row["PlayerA4"], row["PlayerB4"], row["Date"],
-             row["Division"], row["Season"], row['id'], row['League']))
-        game_id = row["id"]
-        division = row["Division"]
-        teamA = row["Team A"]
-        teamB = row["Team B"]
-
-        # Mise à jour des informations pour Team A et Team B dans teams_dict
-        if teamA != 'UNKNOWN':
-            teamA = int(teamA)
-            if teamA not in teams_dict:
-                teams_dict[teamA] = {"players": set(), "games": set(), "division": division,"league":"civfr"}
-            teams_dict[teamA]["games"].add(str(game_id))
-            if teamA not in teams_dict_legacy:
-                teams_dict_legacy[teamA] = {"players": set()}
-            for row_name in row_name_player_A :
-                teams_dict_legacy[teamA]["players"].add(row[row_name])
-        if teamB != 'UNKNOWN':
-            teamB = int(teamB)
-            if teamB not in teams_dict:
-                teams_dict[teamB] = {"players": set(), "games": set(), "division": division,"league":"civfr"}
-            teams_dict[teamB]["games"].add(str(game_id))
-
-            if teamB not in teams_dict_legacy:
-                teams_dict_legacy[teamB] = {"players": set()}
-            for row_name in row_name_player_B :
-                teams_dict_legacy[teamB]["players"].add(row[row_name])
-
-        # Pour les joueurs de l'équipe A (PlayerA1 à PlayerA4)
-        for col in ["PlayerA1", "PlayerA2", "PlayerA3", "PlayerA4"]:
-            try :
-                id = int(row[col])
-                if id not in players_dict:
-                    players_dict[id] = {"teams_cpl": {},"teams_civfr": {}, "games": set(),'pseudo': player_id_map_civfr[id]['name']}
-                players_dict[id]["games"].add(str(game_id))
-                if teamA:
-                    # Incrémente le compteur pour teamA
-                    players_dict[id]["teams_civfr"][int(teamA)] = players_dict[id]["teams_civfr"].get(int(teamA), 0) + 1
-            except :
-                pass
-
-        # Pour les joueurs de l'équipe B (PlayerB1 à PlayerB4)
-        for col in ["PlayerB1", "PlayerB2", "PlayerB3", "PlayerB4"]:
-            try :
-                id = int(row[col])
-                if id not in players_dict:
-                    players_dict[id] = {"teams_cpl": {},"teams_civfr": {}, "games": set(),'pseudo': player_id_map_civfr[id]['name']}
-                players_dict[id]["games"].add(str(game_id))
-                if teamB:
-                    # Incrémente le compteur pour teamB
-                    players_dict[id]["teams_civfr"][int(teamB)] = players_dict[id]["teams_civfr"].get(int(teamB), 0) + 1
-            except :
-                pass
-
-    # for row in games_cpl_data:
-    #     cursor.execute("INSERT INTO games ('Team A','Team B',Winner,Victory,'Victory Turn','Map played','Map ban1','Map ban2','Map ban3','Map ban4','Map ban5','Map ban6',Ban1,Ban2,Ban3,Ban4,Ban5,Ban6,Ban7,Ban8,Ban9,Ban10,Ban11,Ban12,Ban13,Ban14,Ban15,Ban16,PickA1,PickB1,PickA2,PickB2,PickA3,PickB3,PickA4,PickB4,PlayerA1,PlayerB1,PlayerA2,PlayerB2,PlayerA3,PlayerB3,PlayerA4,PlayerB4,Date,Division,Season,id,League) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-    #                    (row["Team A"],row["Team B"],row["Winner"],row["Victory"],row["Victory Turn"],row["Map played"],row["Map ban1"],row["Map ban2"],
-    #                                      row["Map ban3"],row["Map ban4"],row["Map ban5"],row["Map ban6"],row["Ban1"],row["Ban2"],row["Ban3"],row["Ban4"],
-    #                                      row["Ban5"],row["Ban6"],row["Ban7"],row["Ban8"],row["Ban9"],row["Ban10"],row["Ban11"],row["Ban12"],
-    #                                      row["Ban13"],row["Ban14"],row["Ban15"],row["Ban16"],row["PickA1"],row["PickB1"],row["PickA2"],row["PickB2"],
-    #                                      row["PickA3"],row["PickB3"],row["PickA4"],row["PickB4"],row["PlayerA1"],row["PlayerB1"],row["PlayerA2"],
-    #                                      row["PlayerB2"],row["PlayerA3"],row["PlayerB3"],row["PlayerA4"],row["PlayerB4"],row["Date"],row["Division"],row["Season"],row['id'],row['League']))
-    #     game_id = row["id"]
-    #     division = row["Division"]
-    #     teamA = row["Team A"]
-    #     teamB = row["Team B"]
-    #
-    #     # Mise à jour des informations pour Team A et Team B dans teams_dict
-    #     if teamA != 'UNKNOWN':
-    #         teamA = int(teamA)
-    #         if teamA not in teams_dict:
-    #             teams_dict[teamA] = {"players": set(), "games": set(), "division": division,"league":"cpl"}
-    #         teams_dict[teamA]["games"].add(str(game_id))
-    #         if teamA not in teams_dict_legacy:
-    #             teams_dict_legacy[teamA] = {"players": set()}
-    #         for row_name in row_name_player_A :
-    #             teams_dict_legacy[teamA]["players"].add(row[row_name])
-    #     if teamB != 'UNKNOWN':
-    #         teamB = int(teamB)
-    #         if teamB not in teams_dict:
-    #             teams_dict[teamB] = {"players": set(), "games": set(), "division": division,"league":"cpl"}
-    #         teams_dict[teamB]["games"].add(str(game_id))
-    #
-    #         if teamB not in teams_dict_legacy:
-    #             teams_dict_legacy[teamB] = {"players": set()}
-    #         for row_name in row_name_player_B :
-    #             teams_dict_legacy[teamB]["players"].add(row[row_name])
-    #
-    #     # Pour les joueurs de l'équipe A (PlayerA1 à PlayerA4)
-    #     for col in ["PlayerA1", "PlayerA2", "PlayerA3", "PlayerA4"]:
-    #         try :
-    #             id = int(row[col])
-    #             if id not in players_dict:
-    #                 players_dict[id] = {"teams_cpl": {},"teams_civfr": {}, "games": set(),'pseudo': player_id_map_cpl[id]['name']}
-    #             players_dict[id]["games"].add(str(game_id))
-    #             if teamA:
-    #                 # Incrémente le compteur pour teamA
-    #                 players_dict[id]["teams_cpl"][int(teamA)] = players_dict[id]["teams_cpl"].get(int(teamA), 0) + 1
-    #         except :
-    #             pass
-    #
-    #     # Pour les joueurs de l'équipe B (PlayerB1 à PlayerB4)
-    #     for col in ["PlayerB1", "PlayerB2", "PlayerB3", "PlayerB4"]:
-    #         try :
-    #             id = int(row[col])
-    #             if id not in players_dict:
-    #                 players_dict[id] = {"teams_cpl": {},"teams_civfr": {}, "games": set(),'pseudo': player_id_map_cpl[id]['name']}
-    #             players_dict[id]["games"].add(str(game_id))
-    #             if teamB:
-    #                 # Incrémente le compteur pour teamB
-    #                 players_dict[id]["teams_cpl"][int(teamB)] = players_dict[id]["teams_cpl"].get(int(teamB), 0) + 1
-    #         except :
-    #             pass
-
-
-
-    # Pour chaque joueur, déterminer son équipe actuelle
-    for id, info in players_dict.items():
-        info["current_team_cpl"] = 'NONE'
-
-        for team_id in info['teams_cpl'].keys() :
-            if team_id is not None and id in player_id_map_cpl and team_id in player_id_map_cpl[id]['role_list'] :
-                info["current_team_cpl"] = team_id
-
-        info["current_team_civfr"] = 'NONE'
-        for team_id in info['teams_civfr'].keys() :
-            if team_id is not None and id in player_id_map_civfr and team_id in player_id_map_civfr[id]['role_list']:
-                info["current_team_civfr"] = team_id
-
-
-    # Compléter teams_dict avec la liste des joueurs extraits
-    for id, info in players_dict.items():
-        team = info["current_team_cpl"]
-        if team != 'NONE':
-            if team not in teams_dict:
-                teams_dict[team] = {"players": set(), "games": set(), "division": "","league":"cpl"}
-            teams_dict[team]["players"].add(id)
-
-        team = info["current_team_civfr"]
-        if team != 'NONE':
-            if team not in teams_dict:
-                teams_dict[team] = {"players": set(), "games": set(), "division": "","league":"civfr"}
-            teams_dict[team]["players"].add(id)
-
-    # Suppression des tables existantes si elles existent déjà
-    cursor_s17.execute("DROP TABLE IF EXISTS players")
-    cursor_s17.execute("DROP TABLE IF EXISTS player_games")
-    cursor_s17.execute("DROP TABLE IF EXISTS teams")
-    cursor_s17.execute("DROP TABLE IF EXISTS team_players")
-    cursor_s17.execute("DROP TABLE IF EXISTS team_games")
-    cursor_s17.execute("DROP TABLE IF EXISTS team_players_legacy")
-
-
-    # Création de la table players (pour les joueurs)
-    cursor_s17.execute('''
-            CREATE TABLE players (
-                player_id INTEGER PRIMARY KEY,
-                player_name TEXT NOT NULL,
-               team_civfr INTEGER NOT NULL,
-               team_cpl INTEGER
-            )
-        ''')
-
-    # Création de la table player_games (liaison joueur - match)
-    cursor_s17.execute('''
-            CREATE TABLE player_games (
-                player_id INTEGER,
-                game_id INTEGER,
-                FOREIGN KEY(player_id) REFERENCES players(player_id)
-            )
-        ''')
-
-    # Création de la table teams (pour les équipes)
-    cursor_s17.execute('''
-            CREATE TABLE teams (
-                team_id INTEGER PRIMARY KEY,
-                team_name TEXT,
-                division TEXT,
-                league TEXT
-            )
-        ''')
-
-    # Création de la table team_players (liaison équipe - joueur)
-    cursor_s17.execute('''
-            CREATE TABLE team_players (
-                team_id INTEGER,
-                player_id INTEGER,
-                FOREIGN KEY(team_id) REFERENCES teams(team_id),
-                FOREIGN KEY(player_id) REFERENCES players(player_id)
-            )
-        ''')
-
-    # Création de la table team_players_legacy (liaison équipe - joueur)
-    cursor_s17.execute('''
-            CREATE TABLE team_players_legacy (
-                team_id INTEGER,
-                player_id INTEGER,
-                FOREIGN KEY(team_id) REFERENCES teams(team_id),
-                FOREIGN KEY(player_id) REFERENCES players(player_id)
-            )
-        ''')
-
-    # Création de la table team_games (liaison équipe - match)
-    cursor_s17.execute('''
-            CREATE TABLE team_games (
-                team_id INTEGER,
-                game_id INTEGER,
-                FOREIGN KEY(team_id) REFERENCES teams(team_id)
-            )
-        ''')
-
-    # # Suppression des tables existantes si elles existent déjà
-    # cursor_cpl.execute("DROP TABLE IF EXISTS players")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS player_games")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS teams")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS team_players")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS team_games")
-    # cursor_cpl.execute("DROP TABLE IF EXISTS team_players_legacy")
-    #
-    # # Création de la table players (pour les joueurs)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE players (
-    #                player_id INTEGER PRIMARY KEY,
-    #                player_name TEXT NOT NULL,
-    #                team_civfr INTEGER NOT NULL,
-    #                team_cpl INTEGER
-    #            )
-    #        ''')
-    #
-    # # Création de la table player_games (liaison joueur - match)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE player_games (
-    #                player_id INTEGER,
-    #                game_id INTEGER,
-    #                FOREIGN KEY(player_id) REFERENCES players(player_id)
-    #            )
-    #        ''')
-    #
-    # # Création de la table teams (pour les équipes)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE teams (
-    #                team_id INTEGER PRIMARY KEY,
-    #                team_name TEXT,
-    #                division TEXT,
-    #                league TEXT
-    #            )
-    #        ''')
-    #
-    # # Création de la table team_players (liaison équipe - joueur)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE team_players (
-    #                team_id INTEGER,
-    #                player_id INTEGER,
-    #                FOREIGN KEY(team_id) REFERENCES teams(team_id),
-    #                FOREIGN KEY(player_id) REFERENCES players(player_id)
-    #            )
-    #        ''')
-    #
-    # # Création de la table team_players_legacy (liaison équipe - joueur)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE team_players_legacy (
-    #                team_id INTEGER,
-    #                player_id INTEGER,
-    #                FOREIGN KEY(team_id) REFERENCES teams(team_id),
-    #                FOREIGN KEY(player_id) REFERENCES players(player_id)
-    #            )
-    #        ''')
-    #
-    # # Création de la table team_games (liaison équipe - match)
-    # cursor_cpl.execute('''
-    #            CREATE TABLE team_games (
-    #                team_id INTEGER,
-    #                game_id INTEGER,
-    #                FOREIGN KEY(team_id) REFERENCES teams(team_id)
-    #            )
-    #        ''')
-
-
-    # Insertion des joueurs dans la table players et création du mapping pseudo -> player_id
-    player_id_dict = {}
-    for id, info in players_dict.items():
-        team_civfr = info["current_team_civfr"]
-        team_cpl = info["current_team_cpl"]
-        print(team_civfr)
-        print(team_cpl)
-        print(id)
-        if team_civfr !='NONE' :
-            player_name = player_id_map_civfr[id]['name']
-            cursor_s17.execute("INSERT INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id,player_name, team_civfr,team_cpl))
-
-        elif team_cpl !='NONE':
-            player_name = player_id_map_cpl[id]['name']
-            # cursor_cpl.execute("INSERT INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id,player_name, team_civfr,team_cpl))
-        try :
-            cursor.execute("REPLACE INTO players (player_id, player_name, team_civfr, team_cpl) VALUES (?,?, ?, ?)", (id, player_name, team_civfr,team_cpl))
-        except:
-            pass
-
-
-        #TODO isoler cpl civ fr
-        for game_id in info["games"]:
-            cursor.execute("INSERT INTO player_games (player_id, game_id) VALUES (?, ?)", (id, int(game_id)))
-            cursor_s17.execute("INSERT INTO player_games (player_id, game_id) VALUES (?, ?)", (id, int(game_id)))
-
-
-    # Insertion des équipes dans la table teams et dans les tables de liaison
-    for team_id, info in teams_dict.items():
-        if team_id!='UNKNOWN':
-            division = info.get("division", "")
-            for game_id in info["games"]:
-                cursor.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
-                cursor_s17.execute("INSERT INTO team_games (team_id, game_id) VALUES (?, ?)", (team_id, int(game_id)))
-            for id in info["players"]:
-                cursor.execute("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)", (team_id, id))
-                cursor_s17.execute("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)", (team_id, id))
-
-            if info['league']=='civfr':
-                cursor.execute("REPLACE INTO teams (team_id, team_name, division, league) VALUES (?, ?, ?, ?)",
-                               (team_id, role_id_map_civfr[team_id], division, info['league']))
-                cursor_s17.execute("REPLACE INTO teams (team_id, team_name, division, league) VALUES (?, ?, ?, ?)",
-                                   (team_id, role_id_map_civfr[team_id], division,info['league']))
-            elif info['league']=='cpl':
-                cursor.execute("REPLACE INTO teams (team_id, team_name, division, league) VALUES (?, ?, ?, ?)",
-                               (team_id, role_id_map_cpl[team_id], division, info['league']))
-                # cursor_cpl.execute("REPLACE INTO teams (team_id, team_name, division, league) VALUES (?, ?, ?, ?)",
-                #                    (team_id, role_id_map_cpl[team_id], division,info['league']))
-
-    for team_id, info in teams_dict_legacy.items():
-        if team_id != 'UNKNOWN':
-            team_id = int(team_id)
-            for id in info["players"]:
-                cursor.execute("INSERT INTO team_players_legacy (team_id, player_id) VALUES (?, ?)",
-                           (team_id, id))
-                cursor_s17.execute("INSERT INTO team_players_legacy (team_id, player_id) VALUES (?, ?)",
-                               (team_id, id))
-
-    conn.commit()
-    conn_s17.commit()
-    # conn_cpl.commit()
-    # conn_cpl.close()
-    conn_s17.close()
+    conn = sqlite3.connect(DATABASE_PATH)
+    n_games, offset = merge_season_games(
+        conn, df, season=SEASON, league=LEAGUE,
+        player_id_map=player_id_map_civfr, role_id_map=role_id_map_civfr,
+    )
     conn.close()
-    print(f"Nouvelles tables ajoutées dans database.db' : {len(players_dict)} joueurs et {len(teams_dict)} équipes.")
-
-
+    print(f"Season {SEASON}: merged {n_games} games into {DATABASE_PATH} (id offset {offset}).")
 
     await client.close()
 
@@ -711,5 +390,3 @@ with open(path_token, 'r') as file:
     token = file.read().replace('\n', '')
 
 client.run(token)
-
-
