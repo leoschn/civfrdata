@@ -166,15 +166,14 @@ def extract_from_serie_raw(s, format,verbose=False):
 # the merge step below (merge_season_games) figures both out automatically
 # from what's already in database_complete.db.
 # ============================================================================
-SEASON = 17
+SEASON = 18
 LEAGUE = "civfr"
-SEASON_START = datetime.datetime(2026, 4, 5, 8, 30)
+SEASON_START = datetime.datetime(2026, 8, 30, 8, 30)
 DIVISION_CHANNELS = {
-    "1": "s17-reporting-d1",
-    "2": "s17-reporting-d2",
-    "3": "s17-reporting-d3",
-    "4": "s17-reporting-d4",
-    "5": "s17-reporting-d5",
+    "1": "s18-reporting-d1",
+    "2": "s18-reporting-d2",
+    "3": "s18-reporting-d3",
+    "4": "s18-reporting-d4",
 }
 DATABASE_PATH = base_path + "database_complete.db"
 # ============================================================================

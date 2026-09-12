@@ -97,7 +97,11 @@ list_civ_url = [
     ("al-hasan ibn sulaiman",'1AlHasan.png',"Al-Hasan ibn Sulaiman"),
     ("vercingetorix",'Vercingetorix1.png',"Vercingetorix"),
     ("ahiram",'Ahiram2.png',"Ahiram"),
+    ("anacaona",'anacaona.webp',"Anacaona"),
     ("spearthrower",'Spearthrower.png',"Spearthrower"),
+    ("maria theresa",'maria_theresa.webp',"Maria Theresa"),
+    ("stanislaw ii",'stanislawII.webp',"Stanislaw II"),
+    ("theodoric",'theodoric.webp',"Theodoric"),
 ]
 
 list_map_url = [
