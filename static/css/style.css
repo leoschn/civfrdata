@@ -37,6 +37,18 @@ body {
 
 
 
+/* Civ pick / map thumbnails in a row (games list, draft-style game detail):
+   the source assets are NOT a consistent resolution (civ portraits are
+   256x256, but map art varies between 133x133 and 48x48 depending on the
+   file), so side-by-side thumbnails need an explicit common box rather than
+   rendering at native size. Same height + object-fit: contain pattern
+   already used inline for the "Maps Played" cards on team.html. */
+.pick-thumb {
+  height: 70px;
+  width: 100%;
+  object-fit: contain;
+}
+
 .text-team {
   display: flex;
   justify-content: center;

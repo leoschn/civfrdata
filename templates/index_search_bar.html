@@ -13,15 +13,15 @@
                     </div>
                     {% for pick in ['PickA1', 'PickA2', 'PickA3', 'PickA4'] %}
                         <div class="col-3 col-md-1" style="background-color: {{ team_a_color }}">
-                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
+                            <img class="img-fluid pick-thumb" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
                         </div>
                     {% endfor %}
                     <div class="col-3 col-md-1">
-                        <img class="img-fluid" alt="{{ game['Map played'] }}" title="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
+                        <img class="img-fluid pick-thumb" alt="{{ game['Map played'] }}" title="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
                     </div>
                     {% for pick in ['PickB1', 'PickB2', 'PickB3', 'PickB4'] %}
                         <div class="col-3 col-md-1" style="background-color: {{ team_b_color }}">
-                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
+                            <img class="img-fluid pick-thumb" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
                         </div>
                     {% endfor %}
                     <div class="col-6 col-md-1" style="background-color: {{ team_b_color }}">
