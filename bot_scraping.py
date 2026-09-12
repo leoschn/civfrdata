@@ -152,8 +152,13 @@ def extract_from_serie_raw(s, format,verbose=False):
         try :
             data = extract_from_string_raw(row[1]['message'],format, verbose)
             data['Date'] = row[1]['date'].strftime("%d/%m/%y")
+            data['discord_message_id'] = row[1]['message_id']
         except :
-
+            # Not a report (e.g. no 'vs' in the first line) - correctly
+            # dropped here, same as before. A report message that gets
+            # EDITED into something unparseable also lands here and is
+            # dropped the same way; see merge_season_games for what that
+            # means for a game that used to exist at this message id.
             pass
         else:
             l.append(data.copy())
@@ -194,27 +199,55 @@ def merge_season_games(conn, df, season, league, player_id_map, role_id_map):
     Returns (n_games_merged, id_offset_used).
 
     Tested against a copy of the real database in /home/steam/db_test
-    (season_merge.py + run_tests.py) before being wired in here - see that
-    test suite for the two bugs it caught (id drift on rescrape due to the
-    Season=5/CPL id range being historically higher than later seasons, and
-    team_players being wrongly deletable per-season when it's actually a
-    cumulative all-time roster table).
+    (season_merge.py + run_tests.py, plus test_edit_scenario.py for the
+    message-edit behaviour below) before being wired in here.
+
+    Id assignment is keyed off each report's Discord message id (df must
+    have a `discord_message_id` column - see extract_from_serie_raw), not
+    its position in the scraped list. This matters because a message can be
+    EDITED after the fact (correcting a mistake): Discord's history() always
+    returns a message's current content, so a rescrape just sees updated
+    text at the same message id - matching on that id means the same game
+    gets updated in place, not duplicated or reassigned a new id. A message
+    that fails to parse as a report (never was one, or was edited into
+    something that no longer looks like one) is simply absent from df and
+    its game - if it had one - is dropped when this season+league's rows are
+    replaced below, without disturbing any other game's id.
+
+    (An earlier, positional version of this function assigned ids by row
+    order instead, which had exactly this problem: dropping or reordering
+    one message silently reassigned every later game's id. See
+    test_edit_scenario.py for a reproduction.)
     """
     cursor = conn.cursor()
 
-    # Preserve a season's existing id range across reruns (so any permalink
-    # or reference to a game id never drifts); only pick a fresh MAX(id)+1
-    # range the first time this season is ever scraped. NB: global MAX(id)
-    # is NOT reliably "the last season added" - Season=5 (CPL) has a higher
-    # id range than the later civfr seasons for historical reasons.
-    existing_ids = cursor.execute(
-        "SELECT id FROM games WHERE Season=? AND league=?", (season, league)
-    ).fetchall()
-    if existing_ids:
-        offset = min(row[0] for row in existing_ids)
+    cursor.execute("PRAGMA table_info(games)")
+    if "discord_message_id" not in {row[1] for row in cursor.fetchall()}:
+        cursor.execute("ALTER TABLE games ADD COLUMN discord_message_id INTEGER")
+
+    # Match each scraped report to an existing game by Discord message id.
+    # NB: MAX(existing ids)+1 for brand-new messages is still safe against
+    # the Season=5/CPL id range being historically higher than later civfr
+    # seasons, because we only ever look at THIS season+league's own ids.
+    existing = dict(cursor.execute(
+        "SELECT discord_message_id, id FROM games WHERE Season=? AND league=? AND discord_message_id IS NOT NULL",
+        (season, league),
+    ).fetchall())
+
+    if existing:
+        next_new_id = max(existing.values()) + 1
     else:
         (max_id,) = cursor.execute("SELECT COALESCE(MAX(id), -1) FROM games").fetchone()
-        offset = max_id + 1
+        next_new_id = max_id + 1
+    offset = next_new_id
+
+    ids = []
+    for msg_id in df["discord_message_id"]:
+        if msg_id in existing:
+            ids.append(existing[msg_id])
+        else:
+            ids.append(next_new_id)
+            next_new_id += 1
 
     # Idempotent rerun: wipe this season+league's existing footprint first.
     # player_games/team_games are safe to delete-and-rebuild by game_id since
@@ -232,8 +265,8 @@ def merge_season_games(conn, df, season, league, player_id_map, role_id_map):
     cursor.execute("DELETE FROM games WHERE Season=? AND league=?", (season, league))
 
     df = df.copy()
-    df.index = range(offset, offset + len(df))
-    df["id"] = df.index
+    df.index = ids
+    df["id"] = ids
 
     cols = list(df.columns)
     placeholders = ",".join("?" for _ in cols)
@@ -353,8 +386,8 @@ async def on_ready():
             dfs = []
             for division, channel_name in DIVISION_CHANNELS.items():
                 c_channel = discord.utils.get(guild.text_channels, name=channel_name)
-                messages = [{'message': message.content, 'date': message.created_at} async for message in
-                            c_channel.history(after=SEASON_START, limit=1000)]
+                messages = [{'message': message.content, 'date': message.created_at, 'message_id': message.id}
+                            async for message in c_channel.history(after=SEASON_START, limit=1000)]
                 df_div = pd.DataFrame(messages)
                 df_div = extract_from_serie_raw(df_div, format='civfr')
                 df_div['Division'] = division
