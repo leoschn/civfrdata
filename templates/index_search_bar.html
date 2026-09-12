@@ -1,0 +1,38 @@
+{% extends 'base_search_bar.html' %}
+
+{% block content %}
+    {% for game in games %}
+        {% set team_a_color = "rgba(0, 255, 0, 0.5)" if game['Winner'] == game['Team A'] else "rgba(255, 0, 0, 0.5)" if game['Winner'] == game['Team B'] else "rgba(255, 255, 0, 0.5)" %}
+        {% set team_b_color = "rgba(0, 255, 0, 0.5)" if game['Winner'] == game['Team B'] else "rgba(255, 0, 0, 0.5)" if game['Winner'] == game['Team A'] else "rgba(255, 255, 0, 0.5)" %}
+        
+        <a href="{{ url_for('game', game_id=game['id']) }}">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-1" style="background-color: {{ team_a_color }}">
+                        <span class="text-team"> {{ team_mapping[game['Team A']] }} </span>
+                    </div>
+                    {% for pick in ['PickA1', 'PickA2', 'PickA3', 'PickA4'] %}
+                        <div class="col-md-1" style="background-color: {{ team_a_color }}">
+                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
+                        </div>
+                    {% endfor %}
+                    <div class="col-md-1">
+                        <img class="img-fluid" alt="{{ game['Map played'] }}" title="{{ game['Map played'] }}" src="{{ url_map[game['Map played']] }}" />
+                    </div>
+                    {% for pick in ['PickB1', 'PickB2', 'PickB3', 'PickB4'] %}
+                        <div class="col-md-1" style="background-color: {{ team_b_color }}">
+                            <img class="img-fluid" alt="{{ game[pick] }}" src="{{ url_civ[game[pick]] }}" />
+                        </div>
+                    {% endfor %}
+                    <div class="col-md-1" style="background-color: {{ team_b_color }}">
+                        <span class="text-team">
+                            {{ team_mapping[game['Team B']] }} </span>
+                    </div>
+                    <div class="col-md-1">
+                        <span class="text-team"> Season {{ game['Season'] }} : {{ game['Date'] }} </span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    {% endfor %}
+{% endblock %}

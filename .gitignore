@@ -1,0 +1,8 @@
+.idea
+__pycache__/
+/token.txt
+package-lock.json
+*.db
+*.csv
+.venv/
+*.log
