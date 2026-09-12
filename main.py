@@ -6,7 +6,6 @@ from collections import defaultdict
 from datetime import datetime
 import pickle
 import numpy as np
-import spacy
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask import Response
 from werkzeug.exceptions import abort
@@ -1121,26 +1120,51 @@ except FileNotFoundError:
     pass
 
 
-nlp = None
+# Vecteurs de mots pré-calculés (remplace le chargement de spaCy en direct) :
+# les vecteurs de fr_core_news_lg sont statiques, donc ils ont été exportés une
+# fois pour toutes vers word_vectors.db par build_word_vectors_db.py. Voir ce
+# script pour le détail. Le job cron nocturne (update_civantix_page.py) continue
+# lui d'utiliser spaCy directement, car il a besoin du pipeline complet
+# (segmentation de phrases) pour préparer la grille du lendemain.
+WORD_VECTORS_DB_PATH = "word_vectors.db"
+VECTOR_DIM = 300
+_word_vectors_conn = None
+
+
+def _get_word_vectors_conn():
+    global _word_vectors_conn
+    if _word_vectors_conn is None:
+        _word_vectors_conn = sqlite3.connect(WORD_VECTORS_DB_PATH, check_same_thread=False)
+    return _word_vectors_conn
+
+
+def get_word_vector(word):
+    """Renvoie (vector, norm) pour `word` si un vecteur pré-calculé existe,
+    sinon None. `word` doit déjà être en minuscules (comme les guess de l'app)."""
+    conn = _get_word_vectors_conn()
+    row = conn.execute("SELECT vector, norm FROM vectors WHERE word = ?", (word,)).fetchone()
+    if row is None:
+        return None
+    vector = np.frombuffer(row[0], dtype=np.float32)
+    return vector, row[1]
+
+
 @app.route('/civantix')
 def civantix():
-    global nlp
-    if nlp is None:
-        nlp = spacy.load("fr_core_news_lg")
     print('civantix')
-    
+
     # Vérifier que les données existent
     if not structured_title or not structured_text:
         return render_template("civantix.html", title=[], text=[], clue="Données non disponibles")
-    
+
     return render_template("civantix.html", title=structured_title, text=structured_text, clue=category)
 
 
-def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
+def update_tokens(token_list, dico_embd, guess_vector, guess_norm, guess_word, update):
     for i, entry in enumerate(token_list):
         if not entry.get("is_word") or entry.get("revealed"):
             continue
-        score = similarity(dico_embd[entry["lower"]],(guess_token.vector,guess_token.vector_norm))
+        score = similarity(dico_embd[entry["lower"]], (guess_vector, guess_norm))
         if entry["lower"] == guess_word:
             entry["revealed"] = True
             entry["score"] = None
@@ -1163,9 +1187,7 @@ def update_tokens(token_list,dico_embd, guess_token, guess_word, update):
 @app.route('/civantix/guess', methods=['POST'])
 def guess():
     print('guess')
-    global structured_title, structured_text, nlp
-    if nlp is None:
-        nlp = spacy.load("fr_core_news_lg")
+    global structured_title, structured_text
     data = request.json
 
     current_guess_word = data.get("word", "").lower()
@@ -1179,19 +1201,25 @@ def guess():
     # Vérifie si dans le texte
     in_text = any(t.get("lower") == current_guess_word for t in all_words)
 
-    # Vérifie si dans le lexique du modèle spaCy
-    in_vocab = nlp.vocab.has_vector(current_guess_word)
+    # Vérifie si dans le lexique de vecteurs pré-calculés
+    guess_vector_entry = get_word_vector(current_guess_word)
+    in_vocab = guess_vector_entry is not None
 
     if not in_text and not in_vocab:
         return jsonify({"status": "not_found"})
 
     updated = []
 
+    # Mot hors-vocabulaire mais correspondant exactement à une réponse : on
+    # utilise un vecteur nul (comme le ferait spaCy pour un mot inconnu), le
+    # match exact dans update_tokens fonctionne indépendamment du score.
+    if guess_vector_entry is not None:
+        guess_vector, guess_norm = guess_vector_entry
+    else:
+        guess_vector, guess_norm = np.zeros(VECTOR_DIM, dtype=np.float32), 0.0
 
-
-    current_guess_token = nlp(current_guess_word)
-    updated = update_tokens(structured_title, structured_title_embd, current_guess_token, current_guess_word, updated)
-    updated = update_tokens(structured_text, structured_text_embd, current_guess_token, current_guess_word, updated)
+    updated = update_tokens(structured_title, structured_title_embd, guess_vector, guess_norm, current_guess_word, updated)
+    updated = update_tokens(structured_text, structured_text_embd, guess_vector, guess_norm, current_guess_word, updated)
 
     victory = all(tok.get("revealed") for tok in structured_title if tok.get("is_word"))
     if victory:
