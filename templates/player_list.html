@@ -16,14 +16,16 @@
   <div class="row justify-content-center mb-4">
     <div class="col-md-8">
       <form id="playerSearchForm">
+        <label for="playerQuery" class="visually-hidden">Rechercher un joueur</label>
         <div class="input-group">
           <input type="text" id="playerQuery" name="query" class="form-control rounded-pill" placeholder="Rechercher un joueur..." autocomplete="off">
           <button type="submit" class="btn btn-primary rounded-pill ms-3 px-4">Valider</button>
         </div>
+        <div id="playerSearchFeedback" class="alert alert-warning text-center mt-3" role="alert" style="display: none;"></div>
       </form>
     </div>
   </div>
-  
+
   <!-- Affichage des joueurs -->
   <div class="row">
     {% for player in players %}
@@ -91,11 +93,13 @@ $(function() {
         e.preventDefault();
         var query = $("#playerQuery").val().trim().normalize("NFC"); // normalize Unicode
         var playerId = playerMap[query];
+        var feedback = $("#playerSearchFeedback");
         if (playerId) {
+            feedback.hide();
             var url = "{{ url_for('player_details', player_id=0) }}".replace("0", encodeURIComponent(playerId));
             window.location.href = url;
         } else {
-            alert("Aucun joueur trouvé avec ce nom.");
+            feedback.text("Aucun joueur trouvé avec ce nom.").show();
         }
     });
 });

@@ -16,14 +16,16 @@
   <div class="row justify-content-center mb-4">
     <div class="col-md-8">
       <form id="teamSearchForm">
+        <label for="teamQuery" class="visually-hidden">Rechercher une équipe</label>
         <div class="input-group">
           <input type="text" id="teamQuery" name="query" class="form-control rounded-pill" placeholder="Rechercher une équipe..." autocomplete="off">
           <button type="submit" class="btn btn-primary rounded-pill ms-3 px-4">Valider</button>
         </div>
+        <div id="teamSearchFeedback" class="alert alert-warning text-center mt-3" role="alert" style="display: none;"></div>
       </form>
     </div>
   </div>
-  
+
   <!-- Affichage des équipes -->
   <div class="row">
     {% for team in teams %}
@@ -82,9 +84,13 @@ $(function() {
     e.preventDefault();
     var query = $("#teamQuery").val().trim();
     var teamId = teamMap[query];
+    var feedback = $("#teamSearchFeedback");
     if(teamId) {
+      feedback.hide();
       var url = "{{ url_for('team_details', team_id=0) }}".replace(0, encodeURIComponent(teamId));
       window.location.href = url;
+    } else {
+      feedback.text("Aucune équipe trouvée avec ce nom.").show();
     }
   });
 });

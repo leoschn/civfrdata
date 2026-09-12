@@ -605,7 +605,7 @@ def landingpages17():
     return render_template('landingpage.html', divisions=divisions, order=order)
 
 
-@app.route('/')
+@app.route('/s16')
 def landingpages16():
     teams = get_all_teams(16)
     divisions = {}

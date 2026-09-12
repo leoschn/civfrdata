@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Civantix</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -116,10 +117,22 @@
             font-size: 1.1em;
             cursor: pointer;
         }
+
+        #back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: #9fc2e8;
+            text-decoration: none;
+        }
+
+        #back-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
+<a id="back-link" href="/">&larr; Retour à CivFrData</a>
 <h1>Civantix</h1>
 
 <div id="input-zone">
@@ -132,7 +145,7 @@
 <div id="feedback" style="margin-top: 1rem; color: #ff6666; font-weight: bold;"></div>
 
 <div id="container">
-    <button id="revealButton" onclick="revealClue()">Double clic pour révéler la catégorie</button>
+    <button id="revealButton" ondblclick="revealClue()">Double clic pour révéler la catégorie</button>
     <div id="clue">{{ clue }}</div>
 </div>
 
@@ -180,14 +193,16 @@
 
 <script>
     function revealClue() {
-    document.getElementById("revealButton").addEventListener("click", function() {
-        this.style.display = "none";
+        document.getElementById("revealButton").style.display = "none";
         document.getElementById("clue").style.display = "block";
-    });
     }
 
     function viridis(score) {
-        const t = (score - 0.6) / 0.05;
+        // Les guess ne sont colorés qu'à partir de score > 0.6 (cf. update_tokens
+        // côté serveur) ; on étale donc le dégradé sur toute la plage utile
+        // (0.6 à 1.0) plutôt que sur une bande étroite de 0.05, pour que la
+        // couleur donne une vraie indication de "on se rapproche".
+        const t = (score - 0.6) / 0.4;
         const c = Math.max(0, Math.min(1, t));
         const hue = c * 118;
         return `hsl(${hue}, 50%, 25%)`;
