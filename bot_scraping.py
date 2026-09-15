@@ -159,6 +159,113 @@ def extract_from_serie_raw(s, format,verbose=False):
             l.append(data.copy())
     return pd.DataFrame(l)
 
+# Fields that extract_from_string_raw sets to 'UNKNOWN' when it fails to parse them.
+# Map bans are intentionally excluded: that section is optional in a report message,
+# so its absence is not a reporting error. Leader bans ARE required (see LEADER_BAN_FIELDS
+# below) even though the parser represents a missing one differently (0 or absent key
+# rather than 'UNKNOWN').
+REQUIRED_REPORT_FIELDS = [
+    'Team A', 'Team B', 'Winner', 'Victory', 'Victory Turn',
+    'PickA1', 'PickA2', 'PickA3', 'PickA4',
+    'PickB1', 'PickB2', 'PickB3', 'PickB4',
+    'PlayerA1', 'PlayerA2', 'PlayerA3', 'PlayerA4',
+    'PlayerB1', 'PlayerB2', 'PlayerB3', 'PlayerB4',
+]
+
+LEADER_BAN_FIELDS = ['Ban{0}'.format(i) for i in range(1, 17)]
+
+FIELD_LABELS = {
+    'Team A': 'Équipe A',
+    'Team B': 'Équipe B',
+    'Winner': 'Équipe gagnante',
+    'Victory': 'Type de victoire',
+    'Victory Turn': 'Tour de victoire',
+    'PickA1': 'Pick 1 (équipe A)',
+    'PickA2': 'Pick 2 (équipe A)',
+    'PickA3': 'Pick 3 (équipe A)',
+    'PickA4': 'Pick 4 (équipe A)',
+    'PickB1': 'Pick 1 (équipe B)',
+    'PickB2': 'Pick 2 (équipe B)',
+    'PickB3': 'Pick 3 (équipe B)',
+    'PickB4': 'Pick 4 (équipe B)',
+    'PlayerA1': 'Joueur 1 (équipe A)',
+    'PlayerA2': 'Joueur 2 (équipe A)',
+    'PlayerA3': 'Joueur 3 (équipe A)',
+    'PlayerA4': 'Joueur 4 (équipe A)',
+    'PlayerB1': 'Joueur 1 (équipe B)',
+    'PlayerB2': 'Joueur 2 (équipe B)',
+    'PlayerB3': 'Joueur 3 (équipe B)',
+    'PlayerB4': 'Joueur 4 (équipe B)',
+    'LeaderBans': 'Bans de leaders (section manquante)',
+}
+FIELD_LABELS.update({
+    field: 'Ban de leader {0}'.format(i) for i, field in enumerate(LEADER_BAN_FIELDS, start=1)
+})
+
+
+def get_missing_fields(data):
+    missing = [field for field in REQUIRED_REPORT_FIELDS if data.get(field) == 'UNKNOWN']
+
+    if not any(field in data for field in LEADER_BAN_FIELDS):
+        # The 'leader bans' line wasn't found at all in the message.
+        missing.append('LeaderBans')
+    else:
+        # Line was found, but some of the 16 slots weren't filled in.
+        missing += [field for field in LEADER_BAN_FIELDS if not data.get(field)]
+
+    return missing
+
+
+def build_missing_fields_message(missing_fields):
+    lines = ["⚠️ Ce report semble incomplet, il manque les informations suivantes :"]
+    lines += ['- ' + FIELD_LABELS.get(field, field) for field in missing_fields]
+    lines.append("Merci de corriger le message pour que le report soit bien pris en compte.")
+    return '\n'.join(lines)
+
+
+async def sync_missing_fields_reply(message, data, existing_reply):
+    missing_fields = get_missing_fields(data)
+    if missing_fields:
+        content = build_missing_fields_message(missing_fields)
+        if existing_reply is None:
+            await message.reply(content)
+        elif existing_reply.content != content:
+            # Fields changed since our last reply (correction attempted but still
+            # incomplete, or a new field went missing) - update it in place.
+            await existing_reply.edit(content=content)
+        # else: identical to our last reply, nothing changed, don't re-answer.
+    elif existing_reply is not None:
+        # The report is now complete: our earlier error reply is stale, remove it.
+        await existing_reply.delete()
+
+
+async def scrape_division_channel(guild, channel_name, division, after):
+    channel = discord.utils.get(guild.text_channels, name=channel_name)
+    history = [message async for message in channel.history(after=after, limit=1000)]
+
+    existing_replies = {}
+    report_messages = []
+    for message in history:
+        if message.author.id == client.user.id:
+            if message.reference is not None and message.reference.message_id is not None:
+                existing_replies[message.reference.message_id] = message
+        else:
+            report_messages.append(message)
+
+    rows = []
+    for message in report_messages:
+        try:
+            data = extract_from_string_raw(message.content, format='civfr')
+        except Exception:
+            continue
+        data['Date'] = message.created_at.strftime("%d/%m/%y")
+        rows.append(data.copy())
+        await sync_missing_fields_reply(message, data, existing_replies.get(message.id))
+
+    df = pd.DataFrame(rows)
+    df['Division'] = division
+    return df
+
 # enabling intents
 intents = discord.Intents.default()
 intents.members = True
@@ -198,40 +305,12 @@ async def on_ready():
                 name = role.name
                 role_id_map_civfr[id]=name
 
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d1')
-            messages = [{'message':message.content,'date' : message.created_at} async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df1 = pd.DataFrame(messages)
-            df1 = extract_from_serie_raw(df1,format='civfr')
-            df1['Division'] = '1'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d2')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df2 = pd.DataFrame(messages)
-            df2 = extract_from_serie_raw(df2,format='civfr')
-            df2['Division'] = '2'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d3')
-            messages = [{'message':message.content,'date' : message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df3= pd.DataFrame(messages)
-            df3 = extract_from_serie_raw(df3,format='civfr')
-            df3['Division'] = '3'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d4')
-            messages = [{'message': message.content, 'date': message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df4 = pd.DataFrame(messages)
-            df4 = extract_from_serie_raw(df4, format='civfr')
-            df4['Division'] = '4'
-
-            c_channel = discord.utils.get(guild.text_channels, name='s17-reporting-d5')
-            messages = [{'message': message.content, 'date': message.created_at}  async for message in
-                        c_channel.history(after=datetime.datetime(2026, 4, 5, 8, 30), limit=1000)]
-            df5 = pd.DataFrame(messages)
-            df5 = extract_from_serie_raw(df5, format='civfr')
-            df5['Division'] = '5'
+            report_cutoff = datetime.datetime(2026, 4, 5, 8, 30)
+            df1 = await scrape_division_channel(guild, 's17-reporting-d1', '1', report_cutoff)
+            df2 = await scrape_division_channel(guild, 's17-reporting-d2', '2', report_cutoff)
+            df3 = await scrape_division_channel(guild, 's17-reporting-d3', '3', report_cutoff)
+            df4 = await scrape_division_channel(guild, 's17-reporting-d4', '4', report_cutoff)
+            df5 = await scrape_division_channel(guild, 's17-reporting-d5', '5', report_cutoff)
 
         if guild.name == cpl_name:
 
